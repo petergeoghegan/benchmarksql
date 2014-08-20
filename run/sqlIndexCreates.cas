@@ -1,0 +1,6 @@
+
+create index ndx_customer_last  on benchmarksql.customer (c_last);
+create index ndx_customer_first on benchmarksql.customer (c_first);
+
+create index ndx_oorder_c2 on benchmarksql.oorder (o_carrier_id);
+ 

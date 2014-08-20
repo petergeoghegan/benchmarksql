@@ -1,9 +1,15 @@
-*********************************************************************
-Change Log:
+BENCHMARKSQL-5 README
+=====================
 
-Version 4.1.1 2014-08-19 lussman
-   - Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1101 driver
-   - Begin work on supporting Cassandra 2.x
+Change Log:
+-----------
+
+Version 5.0.0 2014-08-19 lussman
+   - WIP
+   - Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1102 driver
+   - Support for Cassandra 2.x
+   - Improve support for Oracle
+   - Add support for MySQL & SQLServer/Sybase
 
 Version 4.1.0 2014-03-13 lussman
    - Upgrade to using JDK 7

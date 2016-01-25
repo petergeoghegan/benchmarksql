@@ -1,4 +1,3 @@
-db=oracle
 driver=oracle.jdbc.driver.OracleDriver
 conn=jdbc:oracle:thin:@localhost:1521:XE
 user=scott

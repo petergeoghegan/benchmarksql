@@ -52,9 +52,10 @@ create table benchmarksql.customer (
   c_data         varchar(500)
 );
 
+create sequence hist_id_seq;
 
 create table benchmarksql.history (
-  hist_id  serial primary key,
+  hist_id  integer not null default nextval('hist_id_seq') primary key,
   h_c_id   integer,
   h_c_d_id integer,
   h_c_w_id integer,

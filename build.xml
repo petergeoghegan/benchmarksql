@@ -1,5 +1,5 @@
-<project name="BenchmarkSQL" default="dist" basedir=".">
-  <description>BenchmarkSQL Build File</description>
+<project name="benchmarksql-5" default="dist" basedir=".">
+  <description>BenchmarkSQL 5 Build File</description>
 
   <presetdef name="javac"> <javac includeantruntime="false" /> </presetdef>
 
@@ -27,7 +27,7 @@
 
   <target name="dist" depends="compile" >
     <mkdir dir="${dist}"/>
-    <jar jarfile="${dist}/BenchmarkSQL-4.1.jar" basedir="${build}"/>
+    <jar jarfile="${dist}/BenchmarkSQL-5.0.jar" basedir="${build}"/>
   </target>
 
   <target name="clean" description="clean up" >

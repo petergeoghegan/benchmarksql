@@ -39,7 +39,7 @@ public class jTPCC implements jTPCCConfig
 
     public static void main(String args[])
     {
-        PropertyConfigurator.configure("log4j.xml");
+        PropertyConfigurator.configure("log4j.properties");
         new jTPCC();
     }
 
@@ -279,7 +279,7 @@ public class jTPCC implements jTPCCConfig
                         Connection conn = null;
                         printMessage("Creating database connection for " + terminalName + "...");
                         conn = DriverManager.getConnection(database, username, password);
-                        conn.setAutoCommit(false);
+                        //conn.setAutoCommit(false);
                         
                         jTPCCTerminal terminal = new jTPCCTerminal
                         (terminalName, terminalWarehouseID, terminalDistrictID, conn,

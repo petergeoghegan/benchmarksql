@@ -1,0 +1,6 @@
+
+drop index ndx_customer_last;
+drop index ndx_customer_first;
+
+drop index ndx_oorder_c2;
+

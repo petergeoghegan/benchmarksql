@@ -1,13 +1,13 @@
-db=postgres
-driver=org.postgresql.Driver
-conn=jdbc:postgresql://localhost:5432/postgres
-user=benchmarksql
-password=password
+db=cassandra
+driver=org.bigsql.cassandra2.jdbc.CassandraDriver
+conn=jdbc:cassandra://lusswork.east1:9160/benchmarksql
+user=cassandra
+password=cassandra
 
 warehouses=1
 terminals=1
 //To run specified transactions per terminal- runMins must equal zero
-runTxnsPerTerminal=10
+runTxnsPerTerminal=1
 //To run for specified minutes- runTxnsPerTerminal must equal zero
 runMins=0
 //Number of total transactions per minute
@@ -16,9 +16,9 @@ limitTxnsPerMin=300
 
 //The following five values must add up to 100
 //The default percentages of 45, 43, 4, 4 & 4 match the TPC-C spec
-newOrderWeight=45
-paymentWeight=43
-orderStatusWeight=4
-deliveryWeight=4
-stockLevelWeight=4
+newOrderWeight=100
+paymentWeight=0
+orderStatusWeight=0
+deliveryWeight=0
+stockLevelWeight=0
 

@@ -1,0 +1,18 @@
+
+truncate benchmarksql.warehouse;
+
+truncate benchmarksql.item;
+
+truncate benchmarksql.stock;
+
+truncate benchmarksql.district;
+
+truncate benchmarksql.customer;
+
+truncate benchmarksql.history;
+
+truncate benchmarksql.oorder;
+
+truncate benchmarksql.order_line;
+
+truncate benchmarksql.new_order;

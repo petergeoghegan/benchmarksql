@@ -601,7 +601,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
         float c_balance;
         String c_first, c_middle;
         java.sql.Date entdate = null;
-        Vector orderLines = new Vector();
+        Vector <String> orderLines = new Vector <String> ();
 
 
         try

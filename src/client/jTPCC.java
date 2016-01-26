@@ -419,8 +419,8 @@ public class jTPCC implements jTPCCConfig
         long totalMem = Runtime.getRuntime().totalMemory() / (1024*1024);
         double tpmC = (6000000*fastNewOrderCounter/(currTimeMillis - sessionStartTimestamp))/100.0;
         double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
-
-
+        
+	System.out.println("");
         log.info("Term-00, ");
         log.info("Term-00, ");
         log.info("Term-00, Measured tpmC (NewOrders) = " + tpmC);
@@ -461,45 +461,35 @@ public class jTPCC implements jTPCCConfig
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
         return dateFormat.format(new java.util.Date());
     }
-
-    private void updateStatusLine()
+    
+    synchronized private void updateStatusLine()
     {
-        StringBuilder informativeText = new StringBuilder("");
         long currTimeMillis = System.currentTimeMillis();
-
-        if(fastNewOrderCounter != 0)
-        {
-            double tpmC = (6000000*fastNewOrderCounter/(currTimeMillis - sessionStartTimestamp))/100.0;
-            double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
-            informativeText.append("Term-00, Running Average tpmTOTAL: " + tpmTotal + "    ");
-        }
-
+        
         if(currTimeMillis > sessionNextTimestamp)
         {
-            sessionNextTimestamp += 5000;  /* check this every 5 seconds */
+	    StringBuilder informativeText = new StringBuilder("");
+	    Formatter fmt = new Formatter(informativeText);
+            double tpmC = (6000000*fastNewOrderCounter/(currTimeMillis - sessionStartTimestamp))/100.0;
+            double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
+
+            sessionNextTimestamp += 1000;  /* update this every seconds */
+
+	    fmt.format("Term-00, Running Average tpmTOTAL: %.2f", tpmTotal);
+
+	    /* XXX What is the meaning of these numbers? */
             recentTpmC = (fastNewOrderCounter - sessionNextKounter) * 12;
             recentTpmTotal= (transactionCount-sessionNextKounter)*12;
             sessionNextKounter = fastNewOrderCounter;
-        }
+	    fmt.format("    Current tpmTOTAL: %d", recentTpmTotal);
 
-        if(fastNewOrderCounter != 0)
-        {
-            informativeText.append("Current tpmTOTAL: " + recentTpmTotal + "    ");
-
-        }
-
-        long freeMem = Runtime.getRuntime().freeMemory() / (1024*1024);
-        long totalMem = Runtime.getRuntime().totalMemory() / (1024*1024);
-        informativeText.append("Memory Usage: " + (totalMem - freeMem) + "MB / " + totalMem + "MB");
-
+	    long freeMem = Runtime.getRuntime().freeMemory() / (1024*1024);
+	    long totalMem = Runtime.getRuntime().totalMemory() / (1024*1024);
+	    fmt.format("    Memory Usage: %dMB / %dMB          ", (totalMem - freeMem), totalMem);
 
             System.out.print(informativeText);
-            for (int count = 0; count < 1+informativeText.length(); count++) {
-                System.out.print("\b");
+            for (int count = 0; count < 1+informativeText.length(); count++)
+                System.out.print("\b");        
         }
-        informativeText.delete(0,informativeText.length());
-
     }
-
-
 }

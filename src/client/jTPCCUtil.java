@@ -1,5 +1,5 @@
 /*
- * jTPCCUtil - utility functions for the Open Source Java implementation of 
+ * jTPCCUtil - utility functions for the Open Source Java implementation of
  *    the TPC-C benchmark
  *
  * Copyright (C) 2003, Raul Barbosa
@@ -12,12 +12,12 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.text.*;
- 
-public class jTPCCUtil implements jTPCCConfig 
+
+public class jTPCCUtil implements jTPCCConfig
 {
 
   public static String getSysProp(String inSysProperty, String defaultValue) {
-    
+
     String outPropertyValue = null;
 
     try {
@@ -29,8 +29,8 @@ public class jTPCCUtil implements jTPCCConfig
     return(outPropertyValue);
 
   } // end getSysProp
-  
-  
+
+
   public static String randomStr(long strLen){
 
     char freshChar;
@@ -59,7 +59,7 @@ public class jTPCCUtil implements jTPCCConfig
     {
         String dS = ""+d;
         return dS.length() > 6 ? dS.substring(0, 6) : dS;
-    }    
+    }
 
     public static int getItemID(Random r)
     {
@@ -88,4 +88,4 @@ public class jTPCCUtil implements jTPCCConfig
         return (((randomNumber(0, x, r) | randomNumber(min, max, r)) + randomNumber(0, x, r)) % (max-min+1)) + min;
     }
 
-} // end jTPCCUtil 
+} // end jTPCCUtil

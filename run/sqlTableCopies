@@ -1,10 +1,10 @@
 
 copy benchmarksql.warehouse
-  (w_id, w_ytd, w_tax, w_name, w_street_1, w_street_2, w_city, w_state, w_zip)  
+  (w_id, w_ytd, w_tax, w_name, w_street_1, w_street_2, w_city, w_state, w_zip)
   from '/tmp/csv/warehouse.csv' WITH CSV;
 
 copy benchmarksql.item
-  (i_id, i_name, i_price, i_data, i_im_id) 
+  (i_id, i_name, i_price, i_data, i_im_id)
   from '/tmp/csv/item.csv' WITH CSV;
 
 copy benchmarksql.stock
@@ -15,28 +15,28 @@ copy benchmarksql.stock
 
 copy benchmarksql.district
   (d_id, d_w_id, d_ytd, d_tax, d_next_o_id, d_name, d_street_1,
-   d_street_2, d_city, d_state, d_zip) 
+   d_street_2, d_city, d_state, d_zip)
   from '/tmp/csv/district.csv' WITH CSV;
 
 copy benchmarksql.customer
-  (c_id, c_d_id, c_w_id, c_discount, c_credit, c_last, c_first, c_credit_lim, 
-   c_balance, c_ytd_payment, c_payment_cnt, c_delivery_cnt, c_street_1, 
-   c_street_2, c_city, c_state, c_zip, c_phone, c_since, c_middle, c_data) 
+  (c_id, c_d_id, c_w_id, c_discount, c_credit, c_last, c_first, c_credit_lim,
+   c_balance, c_ytd_payment, c_payment_cnt, c_delivery_cnt, c_street_1,
+   c_street_2, c_city, c_state, c_zip, c_phone, c_since, c_middle, c_data)
   from '/tmp/csv/customer.csv' WITH CSV;
 
 copy benchmarksql.history
-  (hist_id, h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data) 
+  (hist_id, h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data)
   from '/tmp/csv/cust-hist.csv' WITH CSV;
 
 copy benchmarksql.oorder
-  (o_id, o_w_id, o_d_id, o_c_id, o_carrier_id, o_ol_cnt, o_all_local, o_entry_d) 
+  (o_id, o_w_id, o_d_id, o_c_id, o_carrier_id, o_ol_cnt, o_all_local, o_entry_d)
   from '/tmp/csv/order.csv' WITH CSV;
 
 copy benchmarksql.order_line
-  (ol_w_id, ol_d_id, ol_o_id, ol_number, ol_i_id, ol_delivery_d, 
-   ol_amount, ol_supply_w_id, ol_quantity, ol_dist_info) 
+  (ol_w_id, ol_d_id, ol_o_id, ol_number, ol_i_id, ol_delivery_d,
+   ol_amount, ol_supply_w_id, ol_quantity, ol_dist_info)
   from '/tmp/csv/order-line.csv' WITH CSV;
 
 copy benchmarksql.new_order
-  (no_w_id, no_d_id, no_o_id)  
+  (no_w_id, no_d_id, no_o_id)
   from '/tmp/csv/new-order.csv' WITH CSV;

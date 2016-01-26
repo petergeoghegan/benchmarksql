@@ -1,5 +1,5 @@
 /*
- * ExecJDBC - Command line program to process SQL DDL statements, from   
+ * ExecJDBC - Command line program to process SQL DDL statements, from
  *             a text input file, to any JDBC Data Source
  *
  * Copyright (C) 2004-2014, Denis Lussier
@@ -13,7 +13,7 @@ import java.util.*;
 
 public class ExecJDBC {
 
-  
+
   public static void main(String[] args) {
 
     Connection conn = null;
@@ -25,22 +25,22 @@ public class ExecJDBC {
 
     Properties ini = new Properties();
     ini.load( new FileInputStream(System.getProperty("prop")));
-                                                                                
+
     // Register jdbcDriver
     Class.forName(ini.getProperty( "driver" ));
 
     // make connection
     conn = DriverManager.getConnection(ini.getProperty("conn"),
       ini.getProperty("user"),ini.getProperty("password"));
-    conn.setAutoCommit(true); 
-                                                                                
+    conn.setAutoCommit(true);
+
     // Create Statement
     stmt = conn.createStatement();
-                                                                                
+
       // Open inputFile
       BufferedReader in = new BufferedReader
         (new FileReader(jTPCCUtil.getSysProp("commandFile",null)));
-  
+
       // loop thru input file and concatenate SQL statement fragments
       while((rLine = in.readLine()) != null) {
 
@@ -59,15 +59,15 @@ public class ExecJDBC {
                }
            }
 
-         } //end if 
-        
+         } //end if
+
       } //end while
 
       in.close();
 
     } catch(IOException ie) {
         System.out.println(ie.getMessage());
-    
+
     } catch(SQLException se) {
         System.out.println(se.getMessage());
 
@@ -95,7 +95,7 @@ public class ExecJDBC {
     try {
 
       stmt.execute(sql.toString().replace(';',' '));
-    
+
     }catch(SQLException se) {
       System.out.println(se.getMessage());
     } // end try

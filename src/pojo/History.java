@@ -3,7 +3,7 @@ import java.io.Serializable;
 
 
 public class History implements Serializable {
-  
+
   public int    hist_id;
   public int    h_c_id;
   public int    h_c_d_id;

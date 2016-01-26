@@ -25,12 +25,12 @@ Version 4.0.9 2013-11-04 cadym:
   + Added id column as primary key to history table
   + Renamed schema to benchmarksql
   + Changed log4j format to be more readable
-  + Created the "benchmark" schema to contain all tables 
+  + Created the "benchmark" schema to contain all tables
   + Incorporate new PostgreSQL JDBC4 version 1003 driver
-  + Transaction rate pacing mechanism 
-  + Correct error with loading customer table from csv file 
+  + Transaction rate pacing mechanism
+  + Correct error with loading customer table from csv file
   + Status line report dynamically shown on terminal
-  + Fix lookup by name in PaymentStatus and Delivery Transactions 
+  + Fix lookup by name in PaymentStatus and Delivery Transactions
     (in order to be more compatible with the TPC-C spec)
   + Rationalized the variable naming in the input parameter files
     (now that the GUI is gone, variable names still make sense)
@@ -40,10 +40,10 @@ Version 4.0.2  2013-06-06   lussman & cadym:
 --------------------------------------------
   + Removed Swing & AWT GUI so that this program is runnable from
     the command line
-  + Remove log4j usage from runSQL & runLoader (only used now for 
+  + Remove log4j usage from runSQL & runLoader (only used now for
     the actual running of the Benchmark)
   + Fix truncation problem with customer.csv file
-  + Comment out "BadCredit" business logic that was not working 
+  + Comment out "BadCredit" business logic that was not working
     and throwing stack traces
   + Fix log4j messages to always show the terminal name
   + Remove bogus log4j messages
@@ -64,11 +64,11 @@ Version 3.0.9 2013-03-21  lussman:
 Version 2.3.5  2013-01-29  lussman:
 -----------------------------------
   + Default build is now with JDK 1.6 and JDBC 4 Postgres 9.2 driver
-  + Remove outdated JDBC 3 drivers (for JDK 1.5).  You can run as 
+  + Remove outdated JDBC 3 drivers (for JDK 1.5).  You can run as
     before by a JDBC4 driver from any supported vendor.
-  + Remove ExecJDBC warning about trying to rollback when in 
+  + Remove ExecJDBC warning about trying to rollback when in
     autocommit mode
-  + Remove the extraneous COMMIT statements from the DDL scripts 
+  + Remove the extraneous COMMIT statements from the DDL scripts
     since ExecJDBC runs in autocommit mode
   + Fix the version number displayed in the console
 

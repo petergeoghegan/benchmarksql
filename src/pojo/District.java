@@ -3,7 +3,7 @@ import java.io.Serializable;
 
 
 public class District implements Serializable {
- 
+
   public int    d_id;
   public int    d_w_id;
   public int    d_next_o_id;

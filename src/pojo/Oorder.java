@@ -3,7 +3,7 @@ import java.io.Serializable;
 
 
 public class Oorder implements Serializable {
-  
+
   public int  o_id;
   public int  o_w_id;
   public int  o_d_id;

@@ -740,7 +740,7 @@ static void initJDBC() {
                 customer.c_credit =  "GC";   // 90% Good Credit
               }
               //customer.c_credit =  "GC";
-                
+
               customer.c_last =  jTPCCUtil.getLastName(gen);
               customer.c_first =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(8,16,gen));
               customer.c_credit_lim =  50000;
@@ -882,8 +882,8 @@ static void initJDBC() {
           } // end for [d]
 
         } // end for [w]
-          
-          
+
+
 
         long tmpTime = new java.util.Date().getTime();
         String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
@@ -1069,7 +1069,7 @@ static void initJDBC() {
                     nworPrepStmt.clearBatch();
                     orlnPrepStmt.clearBatch();
                     transCommit();
-				  } 
+				  }
                 }
 
               } // end for [l]

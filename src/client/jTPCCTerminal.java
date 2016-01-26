@@ -79,13 +79,13 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
     //Stock Level Txn
       private PreparedStatement stockGetDistOrderId = null;
       private PreparedStatement stockGetCountStock = null;
-    
+
       long terminalStartTime = 0;
       long transactionEnd;
 
     public jTPCCTerminal
-      (String terminalName, int terminalWarehouseID, int terminalDistrictID, Connection conn, 
-       int numTransactions, int paymentWeight, int orderStatusWeight, 
+      (String terminalName, int terminalWarehouseID, int terminalDistrictID, Connection conn,
+       int numTransactions, int paymentWeight, int orderStatusWeight,
        int deliveryWeight, int stockLevelWeight, int numWarehouses, int limPerMin_Terminal, jTPCC parent) throws SQLException
     {
         this.terminalName = terminalName;
@@ -203,11 +203,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             {
                 parent.signalTerminalEndedTransaction(this.terminalName, transactionTypeName, transactionEnd - transactionStart, (skippedDeliveries == 0 ? "None" : "" + skippedDeliveries + " delivery(ies) skipped."), newOrder);
             }
-            
+
             if(limPerMin_Terminal>0){
             long elapse = transactionEnd-transactionStart;
             long timePerTx = 60000/limPerMin_Terminal;
-            
+
             if(elapse<timePerTx){
                 try{
                     int sleepTime= (int) (timePerTx-elapse);
@@ -307,12 +307,12 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                     customerByName = false;
                     customerID = jTPCCUtil.getCustomerID(gen);
                 }
-                
+
                 customerByName = false;
                 customerID = jTPCCUtil.getCustomerID(gen);
 
-                
-                            
+
+
                 float paymentAmount = (float)(jTPCCUtil.randomNumber(100, 500000, gen)/100.0);
 
                 terminalMessage("");
@@ -338,11 +338,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 customerLastName = null;
                 customerID = -1;
 
-                
+
                 customerID = jTPCCUtil.getCustomerID(gen);
                 customerByName = false;
-                
-                
+
+
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Order-Status)...");
@@ -572,7 +572,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 }
             }
             terminalMessage("+-----------------------------------------------------------------+");
-             
+
             transactionEnd = System.currentTimeMillis();
         }
         catch(Exception e)
@@ -661,7 +661,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 rs.close();
                 rs = null;
             } else {
-            
+
                 if (ordStatGetCustBal == null) {
                   ordStatGetCustBal = conn.prepareStatement(
                     "SELECT c_balance, c_first, c_middle, c_last" +
@@ -811,7 +811,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 }
             }
             terminalMessage("+-----------------------------------------------------------------+");
-             
+
             transactionEnd = System.currentTimeMillis();
         }
         catch(Exception e)
@@ -1119,7 +1119,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             terminalMessage(" ");
             terminalMessage(" Execution Status: New order placed!");
             terminalMessage("+-----------------------------------------------------------------+");
-             
+
             transactionEnd = System.currentTimeMillis();
 
         } //// ugh :-), this is the end of the try block at the begining of this method /////////
@@ -1143,7 +1143,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 terminalMessage("   Credit:  " + c_credit);
                 terminalMessage(" Execution Status: Item number is not valid!");
                 terminalMessage("+-----------------------------------------------------------------+");
-                 
+
 
                 try {
                     terminalMessage("Performing ROLLBACK in NEW-ORDER Txn...");
@@ -1232,7 +1232,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             terminalMessage(" Stock Level Threshold: " + threshold);
             terminalMessage(" Low Stock Count:       " + stock_count);
             terminalMessage("+-----------------------------------------------------------------+");
-             
+
             transactionEnd = System.currentTimeMillis();
         }
         catch(Exception e)
@@ -1432,7 +1432,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             c_balance += h_amount;
 
             if(c_credit.equals("BC")) {  // bad credit
-                
+
                 if (payGetCustCdata == null) {
                   payGetCustCdata = conn.prepareStatement(
                     "SELECT c_data FROM benchmarksql.customer WHERE c_w_id = ? AND c_d_id = ? AND c_id = ?");
@@ -1477,7 +1477,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 }
 
             } else { // GoodCredit
-    
+
 
                 if (payUpdateCustBal == null) {
                   payUpdateCustBal = conn.prepareStatement(
@@ -1570,9 +1570,9 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                     terminalMessage(" Cust-Data: " + c_data);
                 }
             }
-            
+
             terminalMessage("+-----------------------------------------------------------------+");
-             
+
         }
         catch(Exception e)
         {
@@ -1612,7 +1612,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
     private void printMessage(String message) {
       log.trace(terminalName + ", " + message);
-      
+
     }
 
 

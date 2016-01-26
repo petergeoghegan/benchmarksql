@@ -3,7 +3,7 @@ import java.io.Serializable;
 
 
 public class Customer implements Serializable {
- 
+
   public int    c_id;
   public int    c_d_id;
   public int    c_w_id;

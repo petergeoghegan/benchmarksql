@@ -7,12 +7,12 @@
  */
 
 import org.apache.log4j.*;
- 
+
 import java.io.*;
 import java.sql.*;
 import java.util.*;
 import java.text.*;
-  
+
 
 public class jTPCC implements jTPCCConfig
 {
@@ -60,8 +60,8 @@ public class jTPCC implements jTPCCConfig
         } catch (IOException e) {
           errorMessage("Term-00, could not load properties file");
         }
-        
-                                                                               
+
+
         log.info("Term-00, ");
         log.info("Term-00, +-------------------------------------------------------------+");
         log.info("Term-00,      BenchmarkSQL v" + JTPCCVERSION);
@@ -79,7 +79,7 @@ public class jTPCC implements jTPCCConfig
         log.info("Term-00, ");
         String  iWarehouses         = getProp(ini,"warehouses");
         String  iTerminals          = getProp(ini,"terminals");
-        
+
         String  iRunTxnsPerTerminal =  ini.getProperty("runTxnsPerTerminal");
         String iRunMins  =  ini.getProperty("runMins");
         if (Integer.parseInt(iRunTxnsPerTerminal) ==0 && Integer.parseInt(iRunMins)!=0){
@@ -98,23 +98,23 @@ public class jTPCC implements jTPCCConfig
         String  iStockLevelWeight   = getProp(ini,"stockLevelWeight");
 
         log.info("Term-00, ");
-        
+
         if(Integer.parseInt(limPerMin) !=0){
             limPerMin_Terminal = Integer.parseInt(limPerMin)/Integer.parseInt(iTerminals);
         }
         else{
             limPerMin_Terminal = -1;
         }
-    
-        
+
+
         boolean iRunMinsBool=false;
 
-    
+
         this.random = new Random(System.currentTimeMillis());
-        
+
         fastNewOrderCounter = 0;
         updateStatusLine();
-        
+
         try
         {
             String driver = iDriver;
@@ -127,8 +127,8 @@ public class jTPCC implements jTPCCConfig
             errorMessage("Unable to load the database driver!");
             databaseDriverLoaded = false;
         }
-        
-        
+
+
         if(databaseDriverLoaded)
         {
             try
@@ -137,7 +137,7 @@ public class jTPCC implements jTPCCConfig
                 int numTerminals = -1, transactionsPerTerminal = -1, numWarehouses = -1;
                 int newOrderWeightValue = -1, paymentWeightValue = -1, orderStatusWeightValue = -1, deliveryWeightValue = -1, stockLevelWeightValue = -1;
                 long executionTimeMillis = -1;
-                
+
                 try
                 {
                     if (Integer.parseInt(iRunMins) != 0 && Integer.parseInt(iRunTxnsPerTerminal) ==0)
@@ -158,7 +158,7 @@ public class jTPCC implements jTPCCConfig
                     errorMessage("Must indicate either transactions per terminal or number of run minutes!");
                     throw new Exception();
                 }
-                
+
                 try
                 {
                     numWarehouses = Integer.parseInt(iWarehouses);
@@ -170,7 +170,7 @@ public class jTPCC implements jTPCCConfig
                     errorMessage("Invalid number of warehouses!");
                     throw new Exception();
                 }
-                
+
                 try
                 {
                     numTerminals = Integer.parseInt(iTerminals);
@@ -182,9 +182,9 @@ public class jTPCC implements jTPCCConfig
                     errorMessage("Invalid number of terminals!");
                     throw new Exception();
                 }
-                
-                
-                
+
+
+
                 if(Long.parseLong(iRunMins) != 0 && Integer.parseInt(iRunTxnsPerTerminal) == 0)
                 {
                     try
@@ -199,7 +199,7 @@ public class jTPCC implements jTPCCConfig
                         throw new Exception();
                     }
                 }
-                else 
+                else
                 {
                     try
                     {
@@ -221,7 +221,7 @@ public class jTPCC implements jTPCCConfig
                     orderStatusWeightValue = Integer.parseInt(iOrderStatusWeight);
                     deliveryWeightValue = Integer.parseInt(iDeliveryWeight);
                     stockLevelWeightValue = Integer.parseInt(iStockLevelWeight);
-                    
+
                     if(newOrderWeightValue < 0 ||paymentWeightValue < 0 || orderStatusWeightValue < 0 || deliveryWeightValue < 0 || stockLevelWeightValue < 0)
                         throw new NumberFormatException();
                     else if(newOrderWeightValue == 0 && paymentWeightValue == 0 && orderStatusWeightValue == 0 && deliveryWeightValue == 0 && stockLevelWeightValue == 0)
@@ -232,13 +232,13 @@ public class jTPCC implements jTPCCConfig
                     errorMessage("Invalid number in mix percentage!");
                     throw new Exception();
                 }
-                
+
                 if(newOrderWeightValue + paymentWeightValue + orderStatusWeightValue + deliveryWeightValue + stockLevelWeightValue > 100)
                 {
                     errorMessage("Sum of mix percentage parameters exceeds 100%!");
                     throw new Exception();
                 }
-                
+
                 newOrderCounter = 0;
                 printMessage("Session started!");
                 if(!limitIsTime)
@@ -246,9 +246,9 @@ public class jTPCC implements jTPCCConfig
                 else
                     printMessage("Creating " + numTerminals + " terminal(s) with " + (executionTimeMillis/60000) + " minute(s) of execution...");
                 printMessage("Transaction Weights: " + newOrderWeightValue + "% New-Order, " + paymentWeightValue + "% Payment, " + orderStatusWeightValue + "% Order-Status, " + deliveryWeightValue + "% Delivery, " + stockLevelWeightValue + "% Stock-Level");
-                
+
                 printMessage("Number of Terminals\t" + numTerminals);
-                
+
                 terminals = new jTPCCTerminal[numTerminals];
                 terminalNames = new String[numTerminals];
                 terminalsStarted = numTerminals;
@@ -257,12 +257,12 @@ public class jTPCC implements jTPCCConfig
                     String database = iConn;
                     String username = iUser;
                     String password = iPassword;
-                    
+
                     int[][] usedTerminals = new int[numWarehouses][10];
                     for(int i = 0; i < numWarehouses; i++)
                         for(int j = 0; j < 10; j++)
                             usedTerminals[i][j] = 0;
-                    
+
                     for(int i = 0; i < numTerminals; i++)
                     {
                         int terminalWarehouseID;
@@ -274,72 +274,72 @@ public class jTPCC implements jTPCCConfig
                         }
                         while(usedTerminals[terminalWarehouseID-1][terminalDistrictID-1] == 1);
                         usedTerminals[terminalWarehouseID-1][terminalDistrictID-1] = 1;
-                        
+
                         String terminalName = "Term-" + (i>=9 ? ""+(i+1) : "0"+(i+1));
                         Connection conn = null;
                         printMessage("Creating database connection for " + terminalName + "...");
                         conn = DriverManager.getConnection(database, username, password);
                         //conn.setAutoCommit(false);
-                        
+
                         jTPCCTerminal terminal = new jTPCCTerminal
                         (terminalName, terminalWarehouseID, terminalDistrictID, conn,
                          transactionsPerTerminal, paymentWeightValue, orderStatusWeightValue,
                          deliveryWeightValue, stockLevelWeightValue, numWarehouses, limPerMin_Terminal, this);
-                        
+
                         terminals[i] = terminal;
                         terminalNames[i] = terminalName;
                         printMessage(terminalName + "\t" + terminalWarehouseID);
                     }
-                    
+
                     sessionEndTargetTime = executionTimeMillis;
                     signalTerminalsRequestEndSent = false;
-                    
-                    
+
+
                     printMessage("Transaction\tWeight");
                     printMessage("% New-Order\t" + newOrderWeightValue);
                     printMessage("% Payment\t" + paymentWeightValue);
                     printMessage("% Order-Status\t" + orderStatusWeightValue);
                     printMessage("% Delivery\t" + deliveryWeightValue);
                     printMessage("% Stock-Level\t" + stockLevelWeightValue);
-                    
+
                     printMessage("Transaction Number\tTerminal\tType\tExecution Time (ms)\t\tComment");
-                    
+
                     printMessage("Created " + numTerminals + " terminal(s) successfully!");
                     boolean dummvar = true;
-                   
-                    
-                    
+
+
+
                     //^Create Terminals, Start Transactions v //
-                    
+
                     if(dummvar==true){
                     sessionStart = getCurrentTime();
                     sessionStartTimestamp = System.currentTimeMillis();
                     sessionNextTimestamp = sessionStartTimestamp;
                     if(sessionEndTargetTime != -1)
                         sessionEndTargetTime += sessionStartTimestamp;
-                    
+
                     synchronized(terminals)
                     {
                         printMessage("Starting all terminals...");
                         transactionCount = 1;
                         for(int i = 0; i < terminals.length; i++)
                             (new Thread(terminals[i])).start();
-                        
+
                     }
-                    
+
                     printMessage("All terminals started executing " + sessionStart);
                     }
                 }
-                
+
                 catch(Exception e1)
                 {
                     errorMessage("This session ended with errors!");
                     printStreamReport.close();
                     fileOutputStream.close();
-                    
+
                     throw new Exception();
                 }
-                
+
             }
             catch(Exception ex)
             {
@@ -358,7 +358,7 @@ public class jTPCC implements jTPCCConfig
                     printMessage("The time limit has been reached.");
                 printMessage("Signalling all terminals to stop...");
                 signalTerminalsRequestEndSent = true;
-                
+
                 for(int i = 0; i < terminals.length; i++)
                     if(terminals[i] != null)
                         terminals[i].stopRunningWhenPossible();
@@ -407,7 +407,7 @@ public class jTPCC implements jTPCCConfig
         {
             signalTerminalsRequestEnd(true);
         }
-        
+
        updateStatusLine();
 
     }
@@ -419,8 +419,8 @@ public class jTPCC implements jTPCCConfig
         long totalMem = Runtime.getRuntime().totalMemory() / (1024*1024);
         double tpmC = (6000000*fastNewOrderCounter/(currTimeMillis - sessionStartTimestamp))/100.0;
         double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
-        
-        
+
+
         log.info("Term-00, ");
         log.info("Term-00, ");
         log.info("Term-00, Measured tpmC (NewOrders) = " + tpmC);
@@ -428,7 +428,7 @@ public class jTPCC implements jTPCCConfig
         log.info("Term-00, Session Start     = " + sessionStart );
         log.info("Term-00, Session End       = " + sessionEnd);
         log.info("Term-00, Transaction Count = " + (transactionCount-1));
-        
+
     }
 
     private void printMessage(String message)
@@ -461,19 +461,19 @@ public class jTPCC implements jTPCCConfig
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
         return dateFormat.format(new java.util.Date());
     }
-    
+
     private void updateStatusLine()
     {
         StringBuilder informativeText = new StringBuilder("");
         long currTimeMillis = System.currentTimeMillis();
-        
+
         if(fastNewOrderCounter != 0)
         {
             double tpmC = (6000000*fastNewOrderCounter/(currTimeMillis - sessionStartTimestamp))/100.0;
             double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
             informativeText.append("Term-00, Running Average tpmTOTAL: " + tpmTotal + "    ");
         }
-        
+
         if(currTimeMillis > sessionNextTimestamp)
         {
             sessionNextTimestamp += 5000;  /* check this every 5 seconds */
@@ -481,21 +481,21 @@ public class jTPCC implements jTPCCConfig
             recentTpmTotal= (transactionCount-sessionNextKounter)*12;
             sessionNextKounter = fastNewOrderCounter;
         }
-        
+
         if(fastNewOrderCounter != 0)
         {
             informativeText.append("Current tpmTOTAL: " + recentTpmTotal + "    ");
-            
+
         }
 
         long freeMem = Runtime.getRuntime().freeMemory() / (1024*1024);
         long totalMem = Runtime.getRuntime().totalMemory() / (1024*1024);
         informativeText.append("Memory Usage: " + (totalMem - freeMem) + "MB / " + totalMem + "MB");
-        
+
 
             System.out.print(informativeText);
             for (int count = 0; count < 1+informativeText.length(); count++) {
-                System.out.print("\b");        
+                System.out.print("\b");
         }
         informativeText.delete(0,informativeText.length());
 

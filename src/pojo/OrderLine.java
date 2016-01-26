@@ -3,7 +3,7 @@ import java.io.Serializable;
 
 
 public class OrderLine implements Serializable {
-  
+
   public int    ol_w_id;
   public int    ol_d_id;
   public int    ol_o_id;

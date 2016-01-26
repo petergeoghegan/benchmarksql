@@ -683,7 +683,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 c_middle = rs.getString("c_middle");
                 c_balance = rs.getFloat("c_balance");
                 rs.close();
-                ordStatGetCustBal = null;
                 rs = null;
             }
 
@@ -1381,7 +1380,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 c_balance = rs.getFloat("c_balance");
                 c_since = rs.getDate("c_since");
                 rs.close();
-                payCursorCustByName = null;
                 rs = null;
             } else {
               // payment is by customer ID

@@ -81,7 +81,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
       private PreparedStatement stockGetCountStock = null;
 
       long terminalStartTime = 0;
-      long transactionEnd;
+      long transactionEnd = 0;
 
     public jTPCCTerminal
       (String terminalName, int terminalWarehouseID, int terminalDistrictID, Connection conn,
@@ -194,6 +194,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 newOrder = 1;
             }
 
+            long transactionEnd = System.currentTimeMillis();
 
             if(!transactionTypeName.equals("Delivery"))
             {
@@ -205,19 +206,18 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             }
 
             if(limPerMin_Terminal>0){
-            long elapse = transactionEnd-transactionStart;
-            long timePerTx = 60000/limPerMin_Terminal;
+		long elapse = transactionEnd-transactionStart;
+		long timePerTx = 60000/limPerMin_Terminal;
 
-            if(elapse<timePerTx){
-                try{
-                    int sleepTime= (int) (timePerTx-elapse);
-                    Thread.sleep((sleepTime));
-                }
-                catch(Exception e){
-                }
+		if(elapse<timePerTx){
+		    try{
+			long sleepTime = timePerTx-elapse;
+			Thread.sleep((sleepTime));
+		    }
+		    catch(Exception e){
+		    }
+		}
             }
-            }
-
 
             if(stopRunningSignal) stopRunning = true;
         }
@@ -572,8 +572,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 }
             }
             terminalMessage("+-----------------------------------------------------------------+");
-
-            transactionEnd = System.currentTimeMillis();
         }
         catch(Exception e)
         {
@@ -811,8 +809,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 }
             }
             terminalMessage("+-----------------------------------------------------------------+");
-
-            transactionEnd = System.currentTimeMillis();
         }
         catch(Exception e)
         {
@@ -1119,9 +1115,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             terminalMessage(" ");
             terminalMessage(" Execution Status: New order placed!");
             terminalMessage("+-----------------------------------------------------------------+");
-
-            transactionEnd = System.currentTimeMillis();
-
         } //// ugh :-), this is the end of the try block at the begining of this method /////////
 
         catch (SQLException ex) {
@@ -1232,8 +1225,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             terminalMessage(" Stock Level Threshold: " + threshold);
             terminalMessage(" Low Stock Count:       " + stock_count);
             terminalMessage("+-----------------------------------------------------------------+");
-
-            transactionEnd = System.currentTimeMillis();
         }
         catch(Exception e)
         {
@@ -1589,7 +1580,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 logException(e1);
             }
         }
-                    transactionEnd = System.currentTimeMillis();
     }
 
     private void error(String type) {

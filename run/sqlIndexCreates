@@ -11,8 +11,6 @@ alter table benchmarksql.customer add constraint pk_customer
 create index ndx_customer_name
   on  benchmarksql.customer (c_w_id, c_d_id, c_last, c_first);
 
-select setval('hist_id_seq', (select max(hist_id) + 1 from benchmarksql.history), false);
-
 alter table benchmarksql.oorder add constraint pk_oorder
   primary key (o_w_id, o_d_id, o_id);
 

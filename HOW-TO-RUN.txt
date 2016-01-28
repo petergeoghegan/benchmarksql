@@ -50,7 +50,17 @@ Use of JDK7 is required.   Sample JDBC Connection Property files are provided as
         $  ./runSQL.sh props.pg sqlIndexCreates
 
 
-5. Run the "runBenchmark" command file to test the database. This command
+5. Optionally run the "runSQL" command file to execute the SQL script
+   "sqlExtraCreates.<dbflavor>" to make history.hist_id an auto-increment
+   primary key. This column does not exist in the TPC-C standard and is
+   provided for convenience of users of replication systems such as
+   Bucardo or Slony-I. The benchmark itself will work with or without
+   it being an actual auto-incrementing primary key.
+
+        $  ./runSQL.sh props.pg sqlIndexCreates.pg
+
+
+6. Run the "runBenchmark" command file to test the database. This command
    will create terminals and automatically start the transaction based on
    the parameters set in "props".
 

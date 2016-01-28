@@ -15,4 +15,6 @@ drop table benchmarksql.order_line;
 
 drop table benchmarksql.history;
 
+drop sequence benchmarksql.hist_id_seq;
+
 drop table benchmarksql.new_order;

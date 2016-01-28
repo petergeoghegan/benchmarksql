@@ -50,13 +50,23 @@ public class ExecJDBC {
            if (line.startsWith("--")) {
               System.out.println(line);  // print comment line
            } else {
-               sql.append(line);
-               if (line.endsWith(";")) {
-                  execJDBC(stmt, sql);
-                  sql = new StringBuffer();
-               } else {
-                 sql.append("\n");
-               }
+	       if (line.endsWith("\\;"))
+	       {
+	         sql.append(line.replaceAll("\\\\;", ";"));
+		 sql.append("\n");
+	       }
+	       else
+	       {
+		   sql.append(line.replaceAll("\\\\;", ";"));
+		   if (line.endsWith(";")) {
+		      String query = sql.toString();
+
+		      execJDBC(stmt, query.substring(0, query.length() - 1));
+		      sql = new StringBuffer();
+		   } else {
+		     sql.append("\n");
+		   }
+	       }
            }
 
          } //end if
@@ -88,14 +98,12 @@ public class ExecJDBC {
   } // end main
 
 
-  static void execJDBC(Statement stmt, StringBuffer sql) {
+  static void execJDBC(Statement stmt, String query) {
 
-    System.out.println(sql);
+    System.out.println(query + ";");
 
     try {
-
-      stmt.execute(sql.toString().replace(';',' '));
-
+      stmt.execute(query);
     }catch(SQLException se) {
       System.out.println(se.getMessage());
     } // end try

@@ -419,7 +419,7 @@ public class jTPCC implements jTPCCConfig
         long totalMem = Runtime.getRuntime().totalMemory() / (1024*1024);
         double tpmC = (6000000*fastNewOrderCounter/(currTimeMillis - sessionStartTimestamp))/100.0;
         double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
-        
+
 	System.out.println("");
         log.info("Term-00, ");
         log.info("Term-00, ");
@@ -461,11 +461,11 @@ public class jTPCC implements jTPCCConfig
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
         return dateFormat.format(new java.util.Date());
     }
-    
+
     synchronized private void updateStatusLine()
     {
         long currTimeMillis = System.currentTimeMillis();
-        
+
         if(currTimeMillis > sessionNextTimestamp)
         {
 	    StringBuilder informativeText = new StringBuilder("");
@@ -489,7 +489,7 @@ public class jTPCC implements jTPCCConfig
 
             System.out.print(informativeText);
             for (int count = 0; count < 1+informativeText.length(); count++)
-                System.out.print("\b");        
+                System.out.print("\b");
         }
     }
 }

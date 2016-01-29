@@ -37,6 +37,7 @@ function setCP()
 	    if [ ! -z "${ORACLE_HOME}" -a -d ${ORACLE_HOME}/lib ] ; then
 		cp="${cp}:${ORACLE_HOME}/lib/*"
 	    fi
+	    cp="${cp}:../lib/*"
 	    ;;
 	postgres)
 	    cp="../lib/postgres/*:../lib/*"

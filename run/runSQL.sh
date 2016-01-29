@@ -1,5 +1,4 @@
-
-source setCP.sh $1
+source funcs.sh $1
 
 myOPTS="-Dprop=$1"
 myOPTS="$myOPTS -DcommandFile=$2"

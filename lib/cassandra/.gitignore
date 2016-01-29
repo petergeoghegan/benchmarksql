@@ -1,0 +1,4 @@
+*
+!.gitignore
+!README.txt
+!cassandra2-jdbc-*.jar

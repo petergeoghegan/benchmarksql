@@ -18,6 +18,7 @@ public class jTPCC implements jTPCCConfig
 {
     private static org.apache.log4j.Logger log = Logger.getLogger(jTPCC.class);
 
+    private int dbType = DB_UNKNOWN;
     private int currentlyDisplayedTerminal;
 
     private jTPCCTerminal[] terminals;
@@ -70,6 +71,7 @@ public class jTPCC implements jTPCCConfig
         log.info("Term-00,  (c) 2004-2014, Denis Lussier");
         log.info("Term-00, +-------------------------------------------------------------+");
         log.info("Term-00, ");
+	String	iDB		    = getProp(ini,"db");
         String  iDriver             = getProp(ini,"driver");
         String  iConn               = getProp(ini,"conn");
         String  iUser               = getProp(ini,"user");
@@ -98,6 +100,18 @@ public class jTPCC implements jTPCCConfig
         String  iStockLevelWeight   = getProp(ini,"stockLevelWeight");
 
         log.info("Term-00, ");
+
+	if (iDB.equals("cassandra"))
+	    dbType = DB_CASSANDRA;
+	else if (iDB.equals("oracle"))
+	    dbType = DB_ORACLE;
+	else if (iDB.equals("postgres"))
+	    dbType = DB_POSTGRES;
+	else
+	{
+	    log.error("unknown database type '" + iDB + "'");
+	    return;
+	}
 
         if(Integer.parseInt(limPerMin) !=0){
             limPerMin_Terminal = Integer.parseInt(limPerMin)/Integer.parseInt(iTerminals);
@@ -279,7 +293,16 @@ public class jTPCC implements jTPCCConfig
                         Connection conn = null;
                         printMessage("Creating database connection for " + terminalName + "...");
                         conn = DriverManager.getConnection(database, username, password);
-                        //conn.setAutoCommit(false);
+			switch(dbType)
+			{
+			    case DB_CASSANDRA:
+				break;
+
+			    case DB_ORACLE:
+			    case DB_POSTGRES:
+				conn.setAutoCommit(false);
+				break;
+			}
 
                         jTPCCTerminal terminal = new jTPCCTerminal
                         (terminalName, terminalWarehouseID, terminalDistrictID, conn,
@@ -298,7 +321,7 @@ public class jTPCC implements jTPCCConfig
                     printMessage("Transaction\tWeight");
                     printMessage("% New-Order\t" + newOrderWeightValue);
                     printMessage("% Payment\t" + paymentWeightValue);
-                    printMessage("% Order-Status\t" + orderStatusWeightValue);
+                   printMessage("% Order-Status\t" + orderStatusWeightValue);
                     printMessage("% Delivery\t" + deliveryWeightValue);
                     printMessage("% Stock-Level\t" + stockLevelWeightValue);
 

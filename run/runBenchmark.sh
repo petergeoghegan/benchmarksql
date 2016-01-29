@@ -1,3 +1,14 @@
+#!/usr/bin/env bash
+
+if [ $# -ne 1 ] ; then
+    echo "usage: $(basename $0) PROPS_FILE" >&2
+    exit 2
+fi
+
 source funcs.sh $1
 
-java -cp .:$MY_CP:../lib/log4j-1.2.17.jar:../lib/apache-log4j-extras-1.1.jar -Dprop=$1 jTPCC
+setCP || exit 1
+
+myOPTS="-Dprop=$1"
+
+java -cp "$myCP" $myOPTS jTPCC

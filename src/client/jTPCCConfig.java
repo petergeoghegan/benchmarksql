@@ -12,7 +12,16 @@ public interface jTPCCConfig
 {
     public final static String JTPCCVERSION = "5.0";
 
-    public final static int NEW_ORDER = 1, PAYMENT = 2, ORDER_STATUS = 3, DELIVERY = 4, STOCK_LEVEL = 5;
+    public final static int	DB_UNKNOWN = 0,
+				DB_CASSANDRA = 1,
+				DB_ORACLE = 2,
+				DB_POSTGRES = 3;
+
+    public final static int	NEW_ORDER = 1,
+				PAYMENT = 2,
+				ORDER_STATUS = 3,
+				DELIVERY = 4,
+				STOCK_LEVEL = 5;
 
     public final static String[] nameTokens = {"BAR", "OUGHT", "ABLE", "PRI", "PRES", "ESE", "ANTI", "CALLY", "ATION", "EING"};
 

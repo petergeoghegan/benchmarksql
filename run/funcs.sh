@@ -26,33 +26,23 @@ function setCP()
 {
     case "$(getProp db)" in
         cassandra)
-	    csLib="$CASSANDRA_HOME/lib"
-	    jdbc=`ls $csLib/cassandra2-jdbc-*.jar`
-	    #jdbc=`ls $csLib/cassandra-jdbc-*.jar`
-	    sl4j=`ls $csLib/slf4j-log4j*.jar`
-	    sl4ja=`ls $csLib/slf4j-api*.jar`
-	    log4j=`ls $csLib/log4j*.jar`
-	    clientutil=`ls $csLib/apache-cassandra-clientutil*`
-	    thrift=`ls $csLib/apache-cassandra-thrift*`
-	    libthrift=`ls $csLib/libthrift*`
-	    guava=`ls $csLib/guava*.jar`
-	    cp="$jdbc:$sl4j:$sl4ja:$log4j:$clientutil:$thrift:$libthrift:$guava"
-	    if [ ! -f "$jdbc" ]; then
-		echo "CASSANDRA_HOME environment not properly configured" >&2
-		exit 1
+	    cp="../lib/cassandra/*"
+	    if [ ! -z "${CASSANDRA_HOME}" ] ; then
+	        cp="${cp}:${CASSANDRA_HOME}/lib/*"
 	    fi
+	    cp="${cp}:../lib/*"
 	    ;;
 	oracle)
-	    cp="../lib/*"
+	    cp="../lib/oracle/*"
 	    if [ ! -z "${ORACLE_HOME}" -a -d ${ORACLE_HOME}/lib ] ; then
-		cp="${ORACLE_HOME}/lib/*:${cp}"
+		cp="${cp}:${ORACLE_HOME}/lib/*"
 	    fi
 	    ;;
 	postgres)
 	    cp="../lib/*"
 	    ;;
     esac
-    myCP="${cp}:../dist/*"
+    myCP=".:${cp}:../dist/*"
     export myCP
 }
 

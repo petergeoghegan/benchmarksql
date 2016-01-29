@@ -321,7 +321,7 @@ public class jTPCC implements jTPCCConfig
                     printMessage("Transaction\tWeight");
                     printMessage("% New-Order\t" + newOrderWeightValue);
                     printMessage("% Payment\t" + paymentWeightValue);
-                   printMessage("% Order-Status\t" + orderStatusWeightValue);
+		    printMessage("% Order-Status\t" + orderStatusWeightValue);
                     printMessage("% Delivery\t" + deliveryWeightValue);
                     printMessage("% Stock-Level\t" + stockLevelWeightValue);
 

@@ -24,6 +24,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
     private Statement stmt1 = null;
     private ResultSet rs = null;
     private int terminalWarehouseID, terminalDistrictID;
+    private boolean terminalWarehouseFixed;
     private int paymentWeight, orderStatusWeight, deliveryWeight, stockLevelWeight, limPerMin_Terminal;
     private jTPCC parent;
     private Random  gen;
@@ -85,7 +86,8 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
     public jTPCCTerminal
       (String terminalName, int terminalWarehouseID, int terminalDistrictID, Connection conn,
-       int numTransactions, int paymentWeight, int orderStatusWeight,
+       int numTransactions, boolean terminalWarehouseFixed,
+       int paymentWeight, int orderStatusWeight, 
        int deliveryWeight, int stockLevelWeight, int numWarehouses, int limPerMin_Terminal, jTPCC parent) throws SQLException
     {
         this.terminalName = terminalName;
@@ -99,6 +101,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
         this.terminalWarehouseID = terminalWarehouseID;
         this.terminalDistrictID = terminalDistrictID;
+	this.terminalWarehouseFixed = terminalWarehouseFixed;
         this.parent = parent;
         this.numTransactions = numTransactions;
         this.paymentWeight = paymentWeight;
@@ -227,6 +230,19 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
     private int executeTransaction(int transaction)
     {
         int result = 0;
+	int currentWarehouseID;
+	int currentDistrictID;
+
+	if (terminalWarehouseFixed)
+	{
+	    currentWarehouseID = terminalWarehouseID;
+	    currentDistrictID = terminalDistrictID;
+	}
+	else
+	{
+	    currentWarehouseID = jTPCCUtil.randomNumber(1, numWarehouses, gen);
+	    currentDistrictID = jTPCCUtil.randomNumber(1, configDistPerWhse, gen);
+	}
 
         switch(transaction)
         {
@@ -244,7 +260,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                     itemIDs[i] = jTPCCUtil.getItemID(gen);
                     if(jTPCCUtil.randomNumber(1, 100, gen) > 1)
                     {
-                        supplierWarehouseIDs[i] = terminalWarehouseID;
+                        supplierWarehouseIDs[i] = currentWarehouseID;
                     }
                     else
                     {
@@ -252,7 +268,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                         {
                             supplierWarehouseIDs[i] = jTPCCUtil.randomNumber(1, numWarehouses, gen);
                         }
-                        while(supplierWarehouseIDs[i] == terminalWarehouseID && numWarehouses > 1);
+                        while(supplierWarehouseIDs[i] == currentWarehouseID && numWarehouses > 1);
                         allLocal = 0;
                     }
                     orderQuantities[i] = jTPCCUtil.randomNumber(1, 10, gen);
@@ -265,7 +281,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 terminalMessage("");
                 terminalMessage("Starting txn:" + terminalName + ":" +
                                 transactionCount + " (New-Order)");
-                newOrderTransaction(terminalWarehouseID, districtID, customerID, numItems, allLocal, itemIDs, supplierWarehouseIDs, orderQuantities);
+                newOrderTransaction(currentWarehouseID, districtID, customerID, numItems, allLocal, itemIDs, supplierWarehouseIDs, orderQuantities);
                 break;
 
 
@@ -278,7 +294,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 if(x <= 85)
                 {
                     customerDistrictID = districtID;
-                    customerWarehouseID = terminalWarehouseID;
+                    customerWarehouseID = currentWarehouseID;
                 }
                 else
                 {
@@ -287,7 +303,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                     {
                         customerWarehouseID = jTPCCUtil.randomNumber(1, numWarehouses, gen);
                     }
-                    while(customerWarehouseID == terminalWarehouseID && numWarehouses > 1);
+                    while(customerWarehouseID == currentWarehouseID && numWarehouses > 1);
                 }
 
                 int y = jTPCCUtil.randomNumber(1, 100, gen);
@@ -317,7 +333,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Payment)...");
-                paymentTransaction(terminalWarehouseID, customerWarehouseID, paymentAmount, districtID, customerDistrictID, customerID, customerLastName, customerByName);
+                paymentTransaction(currentWarehouseID, customerWarehouseID, paymentAmount, districtID, customerDistrictID, customerID, customerLastName, customerByName);
                 break;
 
 
@@ -326,7 +342,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Stock-Level)...");
-                stockLevelTransaction(terminalWarehouseID, terminalDistrictID, threshold);
+                stockLevelTransaction(currentWarehouseID, currentDistrictID, threshold);
                 break;
 
 
@@ -346,7 +362,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Order-Status)...");
-                orderStatusTransaction(terminalWarehouseID, districtID, customerID, customerLastName, customerByName);
+                orderStatusTransaction(currentWarehouseID, districtID, customerID, customerLastName, customerByName);
                 break;
 
 
@@ -355,7 +371,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Delivery)...");
-                result = deliveryTransaction(terminalWarehouseID, orderCarrierID);
+                result = deliveryTransaction(currentWarehouseID, orderCarrierID);
                 break;
 
 

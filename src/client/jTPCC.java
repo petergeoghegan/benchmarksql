@@ -92,6 +92,7 @@ public class jTPCC implements jTPCCConfig
             errorMessage("Term-00, Must indicate either transactions per terminal or number of run minutes!");
         };
         String  limPerMin           = getProp(ini,"limitTxnsPerMin");
+	String	iTermWhseFixed		= getProp(ini,"terminalWarehouseFixed");
         log.info("Term-00, ");
         String  iNewOrderWeight     = getProp(ini,"newOrderWeight");
         String  iPaymentWeight      = getProp(ini,"paymentWeight");
@@ -149,6 +150,7 @@ public class jTPCC implements jTPCCConfig
                 int numTerminals = -1, transactionsPerTerminal = -1, numWarehouses = -1;
                 int newOrderWeightValue = -1, paymentWeightValue = -1, orderStatusWeightValue = -1, deliveryWeightValue = -1, stockLevelWeightValue = -1;
                 long executionTimeMillis = -1;
+		boolean terminalWarehouseFixed = true;
 
                 try
                 {
@@ -226,6 +228,8 @@ public class jTPCC implements jTPCCConfig
                     }
                 }
 
+		terminalWarehouseFixed = Boolean.parseBoolean(iTermWhseFixed);
+
                 try
                 {
                     newOrderWeightValue = Integer.parseInt(iNewOrderWeight);
@@ -257,6 +261,10 @@ public class jTPCC implements jTPCCConfig
                     printMessage("Creating " + numTerminals + " terminal(s) with " + transactionsPerTerminal + " transaction(s) per terminal...");
                 else
                     printMessage("Creating " + numTerminals + " terminal(s) with " + (executionTimeMillis/60000) + " minute(s) of execution...");
+		if (terminalWarehouseFixed)
+		    printMessage("Terminal Warehouse is fixed");
+		else
+		    printMessage("Terminal Warehouse is NOT fixed");
                 printMessage("Transaction Weights: " + newOrderWeightValue + "% New-Order, " + paymentWeightValue + "% Payment, " + orderStatusWeightValue + "% Order-Status, " + deliveryWeightValue + "% Delivery, " + stockLevelWeightValue + "% Stock-Level");
 
                 printMessage("Number of Terminals\t" + numTerminals);
@@ -295,7 +303,8 @@ public class jTPCC implements jTPCCConfig
 
                         jTPCCTerminal terminal = new jTPCCTerminal
                         (terminalName, terminalWarehouseID, terminalDistrictID, conn,
-                         transactionsPerTerminal, paymentWeightValue, orderStatusWeightValue,
+                         transactionsPerTerminal, terminalWarehouseFixed,
+			 paymentWeightValue, orderStatusWeightValue,
                          deliveryWeightValue, stockLevelWeightValue, numWarehouses, limPerMin_Terminal, this);
 
                         terminals[i] = terminal;

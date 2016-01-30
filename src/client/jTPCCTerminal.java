@@ -91,11 +91,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
         this.terminalName = terminalName;
         this.conn = conn;
         this.stmt = conn.createStatement();
-        //this.stmt.setMaxRows(200);
-        //this.stmt.setFetchSize(100);
+        this.stmt.setMaxRows(200);
+        this.stmt.setFetchSize(100);
 
         this.stmt1 = conn.createStatement();
-        //this.stmt1.setMaxRows(1);
+        this.stmt1.setMaxRows(1);
 
         this.terminalWarehouseID = terminalWarehouseID;
         this.terminalDistrictID = terminalDistrictID;
@@ -847,16 +847,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
         try {
 
             if (stmtGetCustWhse == null) {
-              stmtGetCustWhse = conn.prepareStatement(
-                "SELECT c_discount, c_last, c_credit" +
-                "  FROM benchmarksql.customer" +
-                " WHERE c_w_id = ?" +
-                  " AND c_d_id = ? AND c_id = ?");
-              //stmtGetCustWhse = conn.prepareStatement(
-              //  "SELECT c_discount, c_last, c_credit, w_tax" +
-              //  "  FROM benchmarksql.customer, benchmarksql.warehouse" +
-              //  " WHERE w_id = ? AND w_id = c_w_id" +
-              //    " AND c_d_id = ? AND c_id = ?");
+	      stmtGetCustWhse = conn.prepareStatement(
+		"SELECT c_discount, c_last, c_credit, w_tax" +
+		"  FROM benchmarksql.customer, benchmarksql.warehouse" +
+		" WHERE w_id = ? AND w_id = c_w_id" +
+		  " AND c_d_id = ? AND c_id = ?");
             }
 
             stmtGetCustWhse.setInt(1, w_id);
@@ -871,8 +866,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             c_discount = rs.getFloat("c_discount");
             c_last = rs.getString("c_last");
             c_credit = rs.getString("c_credit");
-            //w_tax = rs.getFloat("w_tax");
-            w_tax = (float)0.1;
+            w_tax = rs.getFloat("w_tax");
             rs.close();
             rs = null;
 

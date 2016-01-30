@@ -101,9 +101,7 @@ public class jTPCC implements jTPCCConfig
 
         log.info("Term-00, ");
 
-	if (iDB.equals("cassandra"))
-	    dbType = DB_CASSANDRA;
-	else if (iDB.equals("oracle"))
+	if (iDB.equals("oracle"))
 	    dbType = DB_ORACLE;
 	else if (iDB.equals("postgres"))
 	    dbType = DB_POSTGRES;
@@ -293,16 +291,7 @@ public class jTPCC implements jTPCCConfig
                         Connection conn = null;
                         printMessage("Creating database connection for " + terminalName + "...");
                         conn = DriverManager.getConnection(database, username, password);
-			switch(dbType)
-			{
-			    case DB_CASSANDRA:
-				break;
-
-			    case DB_ORACLE:
-			    case DB_POSTGRES:
-				conn.setAutoCommit(false);
-				break;
-			}
+			conn.setAutoCommit(false);
 
                         jTPCCTerminal terminal = new jTPCCTerminal
                         (terminalName, terminalWarehouseID, terminalDistrictID, conn,

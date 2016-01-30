@@ -4,13 +4,15 @@ BENCHMARKSQL-5 README
 CHANGE LOG:
 -----------
 
-Version 5.0.0 2014-08-19 lussman:
----------------------------------
+Version 5.0.0 TBD lussman & jannicash:
+---------------------------------------------
   + WIP
   +  Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1102 driver
-  +  Support for Cassandra 2.x
   +  Improve support for Oracle
   +  Add support for MySQL & SQLServer/Sybase
+  +  Conform to clause 4.3.3.1 and enable lookup by last name
+  +  Added a switch to disable terminal-warehouse association, spreading
+     the data access over all configured warehouses.
 
 Version 4.1.0 2014-03-13 lussman:
 ---------------------------------

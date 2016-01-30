@@ -77,6 +77,11 @@ public class jTPCCUtil implements jTPCCConfig
         return nameTokens[num/100] + nameTokens[(num/10)%10] + nameTokens[num%10];
     }
 
+    public static String getLastName(int num)
+    {
+        return nameTokens[num/100] + nameTokens[(num/10)%10] + nameTokens[num%10];
+    }
+
     public static int randomNumber(int min, int max, Random r)
     {
         return (int)(r.nextDouble() * (max-min+1) + min);

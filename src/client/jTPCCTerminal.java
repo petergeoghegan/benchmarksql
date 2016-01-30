@@ -310,7 +310,8 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 boolean customerByName=false;
                 String customerLastName = null;
                 customerID = -1;
-               if(y <= 60)
+
+                if(y <= 60)
                 {
                     // 60% lookups by last name
                     customerByName = true;
@@ -323,11 +324,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                     customerByName = false;
                     customerID = jTPCCUtil.getCustomerID(gen);
                 }
-
-                customerByName = false;
-                customerID = jTPCCUtil.getCustomerID(gen);
-
-
 
                 float paymentAmount = (float)(jTPCCUtil.randomNumber(100, 500000, gen)/100.0);
 
@@ -354,11 +350,19 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 customerLastName = null;
                 customerID = -1;
 
-
-                customerID = jTPCCUtil.getCustomerID(gen);
-                customerByName = false;
-
-
+                if(y <= 60)
+                {
+                    // 60% lookups by last name
+                    customerByName = true;
+                    customerLastName = jTPCCUtil.getLastName(gen);
+                    printMessage("Last name lookup = " + customerLastName);
+                }
+                else
+                {
+                    // 40% lookups by customer ID
+                    customerByName = false;
+                    customerID = jTPCCUtil.getCustomerID(gen);
+                }
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Order-Status)...");

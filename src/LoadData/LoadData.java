@@ -741,7 +741,13 @@ static void initJDBC() {
               }
               //customer.c_credit =  "GC";
 
-              customer.c_last =  jTPCCUtil.getLastName(gen);
+			  // the first 1000 customers have names corresponding to
+			  // DIGSYL(c_id - 1). This guarantees that the lookup by
+			  // c_last never fails. See 4.3.3.1.
+			  if (c <= 1000)
+				  customer.c_last = jTPCCUtil.getLastName(c - 1);
+			  else
+				  customer.c_last =  jTPCCUtil.getLastName(gen);
               customer.c_first =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(8,16,gen));
               customer.c_credit_lim =  50000;
 

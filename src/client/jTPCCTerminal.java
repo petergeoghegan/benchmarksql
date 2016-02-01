@@ -1136,7 +1136,14 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
               log.error(ex.getMessage());
               ex = ex.getNextException();
             }
-
+	    try {
+		transRollback();
+		stmtInsertOrderLine.clearBatch();
+		stmtUpdateStock.clearBatch();
+	    } catch (Exception e) {
+		log.error("--- Unexpected Exception on rollback from unexpected SQLException in NEW-ORDER Txn ---");
+		log.error(e.getMessage());
+	    }
         } catch (Exception e) {
             if (e instanceof IllegalAccessException) {
                 StringBuffer terminalMessage = new StringBuffer();

@@ -2,6 +2,11 @@ DROP SCHEMA IF EXISTS benchmarksql CASCADE;
 
 CREATE SCHEMA benchmarksql;
 
+create table benchmarksql.config (
+  cfg_name    varchar(30) primary key,
+  cfg_value   varchar(50)
+);
+
 create table benchmarksql.warehouse (
   w_id        integer   not null,
   w_ytd       decimal(12,2),

@@ -27,6 +27,7 @@ public class LoadData implements jTPCCConfig {
   private static Connection         conn       = null;
   private static Statement          stmt       = null;
   private static java.sql.Timestamp sysdate    = null;
+  private static PreparedStatement  confPrepStmt;
   private static PreparedStatement  custPrepStmt;
   private static PreparedStatement  distPrepStmt;
   private static PreparedStatement  histPrepStmt;
@@ -42,7 +43,7 @@ public class LoadData implements jTPCCConfig {
   private static java.util.Date     startDate  = null;
   private static java.util.Date     endDate    = null;
 
-  private static Random             gen;
+  private static jTPCCRandom	    rnd;
   private static String             dbType;
   private static int                numWarehouses = 0;
   private static String             fileLocation  = "";
@@ -80,8 +81,8 @@ public class LoadData implements jTPCCConfig {
         initJDBC();
       }
 
-      // seed the random number generator
-      gen = new Random(System.currentTimeMillis());
+      // create the random data generator
+      rnd = new jTPCCRandom();
 
 
     //######################### MAINLINE ######################################
@@ -93,6 +94,8 @@ public class LoadData implements jTPCCConfig {
       long startTimeMS = new java.util.Date().getTime();
       lastTimeMS = startTimeMS;
 
+      System.out.println("");
+      loadConfig();
       System.out.println("");
       long totalRows = loadWhse(numWarehouses);
       System.out.println("");
@@ -185,6 +188,11 @@ static void initJDBC() {
     // Create Statement
     stmt = conn.createStatement();
 
+    confPrepStmt = conn.prepareStatement
+      ("INSERT INTO benchmarksql.config " +
+       " (cfg_name, cfg_value) " +
+       "VALUES (?, ?)");
+
     distPrepStmt = conn.prepareStatement
       ("INSERT INTO benchmarksql.district " +
        " (d_id, d_w_id, d_ytd, d_tax, d_next_o_id, d_name, d_street_1, d_street_2, d_city, d_state, d_zip) " +
@@ -254,6 +262,56 @@ static void initJDBC() {
 } // end initJDBC()
 
 
+  static void loadConfig() {
+      if (outputFiles == true)
+      {
+        try {
+	  out = new PrintWriter(new FileOutputStream(fileLocation + "config.csv"));
+	  System.out.println("Writing Config file to: " + fileLocation + "config.csv");
+
+	  out.println("warehouses," + numWarehouses);
+	  out.println("nURandCLast," + rnd.getNURandCLast());
+	  out.println("nURandCC_ID," + rnd.getNURandCC_ID());
+	  out.println("nURandCI_ID," + rnd.getNURandCI_ID());
+
+	  out.close();
+	  out = null;
+	  return;
+        } catch (Exception e) {
+	  System.err.println(e.getMessage());
+	}
+      }
+
+      try {
+          if (outputFiles == false)
+          {
+            confPrepStmt.setString(1, "warehouses");
+            confPrepStmt.setString(2, "" + numWarehouses);
+	    confPrepStmt.execute();
+
+            confPrepStmt.setString(1, "nURandCLast");
+            confPrepStmt.setString(2, "" + rnd.getNURandCLast());
+	    confPrepStmt.execute();
+
+            confPrepStmt.setString(1, "nURandCC_ID");
+            confPrepStmt.setString(2, "" + rnd.getNURandCC_ID());
+	    confPrepStmt.execute();
+
+            confPrepStmt.setString(1, "nURandCI_ID");
+            confPrepStmt.setString(2, "" + rnd.getNURandCI_ID());
+	    confPrepStmt.execute();
+
+	    transCommit();
+          }
+      } catch(SQLException se) {
+        System.out.println(se.getMessage());
+        transRollback();
+      } catch(Exception e) {
+        e.printStackTrace();
+        transRollback();
+      }
+  } // end loadConfig()
+
   static int loadItem(int itemKount) {
 
       int k = 0;
@@ -279,25 +337,24 @@ static void initJDBC() {
         for (int i=1; i <= itemKount; i++) {
 
           item.i_id = i;
-          item.i_name = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(14,24,gen));
-          item.i_price = (float)(jTPCCUtil.randomNumber(100,10000,gen)/100.0);
+	  item.i_im_id = rnd.nextInt(1, 10000);
+          item.i_name = rnd.getAString(14, 24);
+          item.i_price = (float)(rnd.nextInt(100, 10000) / 100.0);
 
           // i_data
-          randPct = jTPCCUtil.randomNumber(1, 100, gen);
-          len = jTPCCUtil.randomNumber(26, 50, gen);
+          randPct = rnd.nextInt(1, 100);
+          len = rnd.nextInt(26, 50);
           if ( randPct > 10 ) {
              // 90% of time i_data isa random string of length [26 .. 50]
-             item.i_data = jTPCCUtil.randomStr(len);
+             item.i_data = rnd.getAString(len, len);
           } else {
             // 10% of time i_data has "ORIGINAL" crammed somewhere in middle
-            startORIGINAL = jTPCCUtil.randomNumber(2, (len - 8), gen);
+            startORIGINAL = rnd.nextInt(2, (len - 8));
             item.i_data =
-              jTPCCUtil.randomStr(startORIGINAL - 1) +
+              rnd.getAString(startORIGINAL - 1, startORIGINAL - 1) +
               "ORIGINAL" +
-              jTPCCUtil.randomStr(len - startORIGINAL - 9);
+              rnd.getAString(len - startORIGINAL - 9, len - startORIGINAL - 9);
           }
-
-          item.i_im_id = jTPCCUtil.randomNumber(1, 10000, gen);
 
           k++;
 
@@ -385,14 +442,14 @@ static void initJDBC() {
           warehouse.w_ytd      = 300000;
 
           // random within [0.0000 .. 0.2000]
-          warehouse.w_tax = (float)((jTPCCUtil.randomNumber(0,2000,gen))/10000.0);
+          warehouse.w_tax = (float)((rnd.nextInt(0, 2000)) / 10000.0);
 
-          warehouse.w_name     = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(6,10,gen));
-          warehouse.w_street_1 = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-          warehouse.w_street_2 = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-          warehouse.w_city     = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-          warehouse.w_state    = jTPCCUtil.randomStr(3).toUpperCase();
-          warehouse.w_zip      = "123456789";
+          warehouse.w_name     = rnd.getAString(6, 10);
+          warehouse.w_street_1 = rnd.getAString(10, 20);
+          warehouse.w_street_2 = rnd.getAString(10, 20);
+          warehouse.w_city     = rnd.getAString(10, 20);
+          warehouse.w_state    = rnd.getState();
+          warehouse.w_zip      = rnd.getNString(4, 4) + "11111";
 
           if (outputFiles == false)
           {
@@ -472,36 +529,36 @@ static void initJDBC() {
 
             stock.s_i_id = i;
             stock.s_w_id = w;
-            stock.s_quantity = jTPCCUtil.randomNumber(10, 100, gen);
+            stock.s_quantity = rnd.nextInt(10, 100);
             stock.s_ytd = 0;
             stock.s_order_cnt = 0;
             stock.s_remote_cnt = 0;
 
             // s_data
-            randPct = jTPCCUtil.randomNumber(1, 100, gen);
-            len = jTPCCUtil.randomNumber(26, 50, gen);
+            randPct = rnd.nextInt(1, 100);
+            len = rnd.nextInt(26, 50);
             if ( randPct > 10 ) {
                // 90% of time i_data isa random string of length [26 .. 50]
-               stock.s_data = jTPCCUtil.randomStr(len);
+               stock.s_data = rnd.getAString(len, len);
             } else {
               // 10% of time i_data has "ORIGINAL" crammed somewhere in middle
-              startORIGINAL = jTPCCUtil.randomNumber(2, (len - 8), gen);
+              startORIGINAL = rnd.nextInt(2, len - 8);
               stock.s_data =
-                jTPCCUtil.randomStr(startORIGINAL - 1) +
+                rnd.getAString(startORIGINAL - 1, startORIGINAL - 1) +
                 "ORIGINAL" +
-                jTPCCUtil.randomStr(len - startORIGINAL - 9);
+                rnd.getAString(len - startORIGINAL - 9, len - startORIGINAL - 9);
             }
 
-            stock.s_dist_01 = jTPCCUtil.randomStr(24);
-            stock.s_dist_02 = jTPCCUtil.randomStr(24);
-            stock.s_dist_03 = jTPCCUtil.randomStr(24);
-            stock.s_dist_04 = jTPCCUtil.randomStr(24);
-            stock.s_dist_05 = jTPCCUtil.randomStr(24);
-            stock.s_dist_06 = jTPCCUtil.randomStr(24);
-            stock.s_dist_07 = jTPCCUtil.randomStr(24);
-            stock.s_dist_08 = jTPCCUtil.randomStr(24);
-            stock.s_dist_09 = jTPCCUtil.randomStr(24);
-            stock.s_dist_10 = jTPCCUtil.randomStr(24);
+            stock.s_dist_01 = rnd.getAString(24, 24);
+            stock.s_dist_02 = rnd.getAString(24, 24);
+            stock.s_dist_03 = rnd.getAString(24, 24);
+            stock.s_dist_04 = rnd.getAString(24, 24);
+            stock.s_dist_05 = rnd.getAString(24, 24);
+            stock.s_dist_06 = rnd.getAString(24, 24);
+            stock.s_dist_07 = rnd.getAString(24, 24);
+            stock.s_dist_08 = rnd.getAString(24, 24);
+            stock.s_dist_09 = rnd.getAString(24, 24);
+            stock.s_dist_10 = rnd.getAString(24, 24);
 
           k++;
           if (outputFiles == false)
@@ -624,15 +681,15 @@ static void initJDBC() {
             district.d_ytd = 30000;
 
             // random within [0.0000 .. 0.2000]
-            district.d_tax = (float)((jTPCCUtil.randomNumber(0,2000,gen))/10000.0);
+            district.d_tax = (float)((rnd.nextInt(0, 2000)) / 10000.0);
 
             district.d_next_o_id = 3001;
-            district.d_name = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(6,10,gen));
-            district.d_street_1 = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-            district.d_street_2 = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-            district.d_city = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-            district.d_state = jTPCCUtil.randomStr(3).toUpperCase();
-            district.d_zip = "123456789";
+            district.d_name = rnd.getAString(6, 10);
+            district.d_street_1 = rnd.getAString(10, 20);
+            district.d_street_2 = rnd.getAString(10, 20);
+            district.d_city = rnd.getAString(10, 20);
+            district.d_state = rnd.getState();
+            district.d_zip = rnd.getNString(4, 4) + "11111";
 
           k++;
           if (outputFiles == false)
@@ -732,23 +789,24 @@ static void initJDBC() {
 
               // discount is random between [0.0000 ... 0.5000]
               customer.c_discount =
-                (float)(jTPCCUtil.randomNumber(1,5000,gen) / 10000.0);
+                (float)(rnd.nextInt(1, 5000) / 10000.0);
 
-              if (jTPCCUtil.randomNumber(1,100,gen) <= 90) {
+              if (rnd.nextInt(1, 100) <= 90) {
                 customer.c_credit =  "BC";   // 10% Bad Credit
               } else {
                 customer.c_credit =  "GC";   // 90% Good Credit
               }
-              //customer.c_credit =  "GC";
 
-			  // the first 1000 customers have names corresponding to
-			  // DIGSYL(c_id - 1). This guarantees that the lookup by
-			  // c_last never fails. See 4.3.3.1.
-			  if (c <= 1000)
-				  customer.c_last = jTPCCUtil.getLastName(c - 1);
-			  else
-				  customer.c_last =  jTPCCUtil.getLastName(gen);
-              customer.c_first =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(8,16,gen));
+	      // the first 1000 customers have names corresponding to
+	      // DIGSYL(c_id - 1). This guarantees that the lookup by
+	      // c_last never fails. See 4.3.3.1.
+	      if (c <= 1000)
+		  customer.c_last = rnd.getCLast(c - 1);
+	      else
+		  customer.c_last =  rnd.getCLast();
+
+              customer.c_first = rnd.getAString(8, 16);
+              customer.c_middle =  "OE";
               customer.c_credit_lim =  50000;
 
               customer.c_balance =  -10;
@@ -756,17 +814,16 @@ static void initJDBC() {
               customer.c_payment_cnt =  1;
               customer.c_delivery_cnt =  0;
 
-              customer.c_street_1 =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-              customer.c_street_2 =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-              customer.c_city =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,20,gen));
-              customer.c_state =  jTPCCUtil.randomStr(3).toUpperCase();
-              customer.c_zip =  "123456789";
+              customer.c_street_1 = rnd.getAString(10, 20);
+              customer.c_street_2 = rnd.getAString(10, 20);
+              customer.c_city = rnd.getAString(10, 20);
+              customer.c_state = rnd.getState();
+              customer.c_zip = rnd.getNString(4, 4) + "11111";
 
-              customer.c_phone =  "(732)744-1700";
+              customer.c_phone = rnd.getNString(16, 16);
 
               customer.c_since =  sysdate.getTime();
-              customer.c_middle =  "OE";
-              customer.c_data = jTPCCUtil.randomStr(jTPCCUtil.randomNumber(300,500,gen));
+	      customer.c_data = rnd.getAString(300, 500);
 
               history.hist_id = i;
                 i++;
@@ -777,7 +834,7 @@ static void initJDBC() {
               history.h_w_id = w;
               history.h_date = sysdate.getTime();
               history.h_amount = 10;
-              history.h_data =  jTPCCUtil.randomStr(jTPCCUtil.randomNumber(10,24,gen));
+              history.h_data = rnd.getAString(10, 24);
 
               k = k + 2;
               if (outputFiles == false)
@@ -971,9 +1028,9 @@ static void initJDBC() {
               oorder.o_id = c;
               oorder.o_w_id = w;
               oorder.o_d_id = d;
-              oorder.o_c_id = jTPCCUtil.randomNumber(1, custDistKount, gen);
-              oorder.o_carrier_id = jTPCCUtil.randomNumber(1, 10, gen);
-              oorder.o_ol_cnt = jTPCCUtil.randomNumber(5, 15, gen);
+              oorder.o_c_id = rnd.nextInt(1, custDistKount);
+              oorder.o_carrier_id = rnd.nextInt(1, 10);
+              oorder.o_ol_cnt = rnd.nextInt(5, 15);
               oorder.o_all_local = 1;
               oorder.o_entry_d = System.currentTimeMillis();
 
@@ -1026,7 +1083,7 @@ static void initJDBC() {
                 order_line.ol_d_id = d;
                 order_line.ol_o_id = c;
                 order_line.ol_number =  l;   // ol_number
-                order_line.ol_i_id =  jTPCCUtil.randomNumber(1, 100000, gen);
+                order_line.ol_i_id = rnd.nextInt(1, 100000);
                 order_line.ol_delivery_d =  oorder.o_entry_d;
 
                 if (order_line.ol_o_id < 2101) {
@@ -1034,10 +1091,10 @@ static void initJDBC() {
                 } else {
                   // random within [0.01 .. 9,999.99]
                   order_line.ol_amount =
-                    (float)(jTPCCUtil.randomNumber(1, 999999, gen) / 100.0);
+                    (float)(rnd.nextLong(1, 999999) / 100.0);
                 }
 
-                order_line.ol_supply_w_id =  jTPCCUtil.randomNumber(1, numWarehouses, gen);
+                order_line.ol_supply_w_id =  rnd.nextInt(1, numWarehouses);
                 order_line.ol_quantity =  5;
                 order_line.ol_dist_info =  jTPCCUtil.randomStr(24);
 

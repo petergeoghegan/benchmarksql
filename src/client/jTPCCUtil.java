@@ -15,6 +15,8 @@ import java.text.*;
 
 public class jTPCCUtil implements jTPCCConfig
 {
+  private static Connection		dbConn = null;
+  private static PreparedStatement	stmtGetConfig = null;
 
   public static String getSysProp(String inSysProperty, String defaultValue) {
 
@@ -57,40 +59,32 @@ public class jTPCCUtil implements jTPCCConfig
 
     public static String formattedDouble(double d)
     {
-        String dS = ""+d;
-        return dS.length() > 6 ? dS.substring(0, 6) : dS;
+	String dS = ""+d;
+	return dS.length() > 6 ? dS.substring(0, 6) : dS;
     }
 
-    public static int getItemID(Random r)
+    public static String getConfig(String db, String user, String pass, String option)
+	throws Exception
     {
-        return nonUniformRandom(8191, 1, 100000, r);
-    }
+	ResultSet   rs;
+	String	    value;
 
-    public static int getCustomerID(Random r)
-    {
-        return nonUniformRandom(1023, 1, 3000, r);
-    }
+	if (dbConn == null)
+	{
+	    dbConn = DriverManager.getConnection(db, user, pass);
+	    stmtGetConfig = dbConn.prepareStatement(
+		"SELECT cfg_value FROM benchmarksql.config " +
+		" WHERE cfg_name = ?");
+	}
+	stmtGetConfig.setString(1, option);
+	rs = stmtGetConfig.executeQuery();
+	if (!rs.next())
+	    throw new Exception("DB Load configuration parameter '" +
+				option + "' not found");
+	value = rs.getString("cfg_value");
+	rs.close();
 
-    public static String getLastName(Random r)
-    {
-        int num = (int)nonUniformRandom(255, 0, 999, r);
-        return nameTokens[num/100] + nameTokens[(num/10)%10] + nameTokens[num%10];
-    }
-
-    public static String getLastName(int num)
-    {
-        return nameTokens[num/100] + nameTokens[(num/10)%10] + nameTokens[num%10];
-    }
-
-    public static int randomNumber(int min, int max, Random r)
-    {
-        return (int)(r.nextDouble() * (max-min+1) + min);
-    }
-
-
-    public static int nonUniformRandom(int x, int min, int max, Random r)
-    {
-        return (((randomNumber(0, x, r) | randomNumber(min, max, r)) + randomNumber(0, x, r)) % (max-min+1)) + min;
+	return value;
     }
 
 } // end jTPCCUtil

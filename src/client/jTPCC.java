@@ -37,6 +37,7 @@ public class jTPCC implements jTPCCConfig
     private int limPerMin_Terminal;
 
     private double tpmC;
+    private jTPCCRandom rnd;
 
     public static void main(String args[])
     {
@@ -125,9 +126,6 @@ public class jTPCC implements jTPCCConfig
 
         this.random = new Random(System.currentTimeMillis());
 
-        fastNewOrderCounter = 0;
-        updateStatusLine();
-
         try
         {
             String driver = iDriver;
@@ -151,6 +149,22 @@ public class jTPCC implements jTPCCConfig
                 int newOrderWeightValue = -1, paymentWeightValue = -1, orderStatusWeightValue = -1, deliveryWeightValue = -1, stockLevelWeightValue = -1;
                 long executionTimeMillis = -1;
 		boolean terminalWarehouseFixed = true;
+		long CLoad;
+
+		try {
+		    CLoad = Long.parseLong(jTPCCUtil.getConfig(iConn,
+				    iUser, iPassword, "nURandCLast"));
+		} catch (Exception e) {
+		    errorMessage(e.getMessage());
+		    throw e;
+		}
+		this.rnd = new jTPCCRandom(CLoad);
+		log.info("Term-00, C value for C_LAST during load: " + CLoad);
+		log.info("Term-00, C value for C_LAST this run:    " + rnd.getNURandCLast());
+		log.info("Term-00, ");
+
+		fastNewOrderCounter = 0;
+		updateStatusLine();
 
                 try
                 {
@@ -431,6 +445,11 @@ public class jTPCC implements jTPCCConfig
 
        updateStatusLine();
 
+    }
+
+    public jTPCCRandom getRnd()
+    {
+	return rnd;
     }
 
     private void endReport()

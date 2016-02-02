@@ -27,7 +27,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
     private boolean terminalWarehouseFixed;
     private int paymentWeight, orderStatusWeight, deliveryWeight, stockLevelWeight, limPerMin_Terminal;
     private jTPCC parent;
-    private Random  gen;
+    private jTPCCRandom rnd;
 
     private int transactionCount = 1, numTransactions, numWarehouses, newOrderCounter;
     private long totalTnxs = 1;
@@ -103,6 +103,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
         this.terminalDistrictID = terminalDistrictID;
 	this.terminalWarehouseFixed = terminalWarehouseFixed;
         this.parent = parent;
+	this.rnd = parent.getRnd().newRandom();
         this.numTransactions = numTransactions;
         this.paymentWeight = paymentWeight;
         this.orderStatusWeight = orderStatusWeight;
@@ -119,8 +120,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
     public void run()
     {
-        gen = new Random(System.currentTimeMillis() * conn.hashCode());
-
         executeTransactions(numTransactions);
         try
         {
@@ -163,7 +162,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
         for(int i = 0; (i < numTransactions || numTransactions == -1) && !stopRunning; i++)
         {
 
-            long transactionType = jTPCCUtil.randomNumber(1, 100, gen);
+            long transactionType = rnd.nextLong(1, 100);
             int skippedDeliveries = 0, newOrder = 0;
             String transactionTypeName;
 
@@ -240,25 +239,25 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 	}
 	else
 	{
-	    currentWarehouseID = jTPCCUtil.randomNumber(1, numWarehouses, gen);
-	    currentDistrictID = jTPCCUtil.randomNumber(1, configDistPerWhse, gen);
+	    currentWarehouseID = rnd.nextInt(1, numWarehouses);
+	    currentDistrictID = rnd.nextInt(1, configDistPerWhse);
 	}
 
         switch(transaction)
         {
             case NEW_ORDER:
-                int districtID = jTPCCUtil.randomNumber(1, configDistPerWhse, gen);
-                int customerID = jTPCCUtil.getCustomerID(gen);
+                int districtID = rnd.nextInt(1, configDistPerWhse);
+                int customerID = rnd.getCustomerID();
 
-                int numItems = (int)jTPCCUtil.randomNumber(5, 15, gen);
+                int numItems = rnd.nextInt(5, 15);
                 int[] itemIDs = new int[numItems];
                 int[] supplierWarehouseIDs = new int[numItems];
                 int[] orderQuantities = new int[numItems];
                 int allLocal = 1;
                 for(int i = 0; i < numItems; i++)
                 {
-                    itemIDs[i] = jTPCCUtil.getItemID(gen);
-                    if(jTPCCUtil.randomNumber(1, 100, gen) > 1)
+                    itemIDs[i] = rnd.getItemID();
+                    if(rnd.nextInt(1, 100) > 1)
                     {
                         supplierWarehouseIDs[i] = currentWarehouseID;
                     }
@@ -266,16 +265,16 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                     {
                         do
                         {
-                            supplierWarehouseIDs[i] = jTPCCUtil.randomNumber(1, numWarehouses, gen);
+                            supplierWarehouseIDs[i] = rnd.nextInt(1, numWarehouses);
                         }
                         while(supplierWarehouseIDs[i] == currentWarehouseID && numWarehouses > 1);
                         allLocal = 0;
                     }
-                    orderQuantities[i] = jTPCCUtil.randomNumber(1, 10, gen);
+                    orderQuantities[i] = rnd.nextInt(1, 10);
                 }
 
                 // we need to cause 1% of the new orders to be rolled back.
-                if(jTPCCUtil.randomNumber(1, 100, gen) == 1)
+                if(rnd.nextInt(1, 100) == 1)
                     itemIDs[numItems-1] = -12345;
 
                 terminalMessage("");
@@ -286,9 +285,9 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
 
             case PAYMENT:
-                districtID = jTPCCUtil.randomNumber(1, 10, gen);
+                districtID = rnd.nextInt(1, 10);
 
-                int x = jTPCCUtil.randomNumber(1, 100, gen);
+                int x = rnd.nextInt(1, 100);
                 int customerDistrictID;
                 int customerWarehouseID;
                 if(x <= 85)
@@ -298,15 +297,15 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 }
                 else
                 {
-                    customerDistrictID = jTPCCUtil.randomNumber(1, 10, gen);
+                    customerDistrictID = rnd.nextInt(1, 10);
                     do
                     {
-                        customerWarehouseID = jTPCCUtil.randomNumber(1, numWarehouses, gen);
+                        customerWarehouseID = rnd.nextInt(1, numWarehouses);
                     }
                     while(customerWarehouseID == currentWarehouseID && numWarehouses > 1);
                 }
 
-                int y = jTPCCUtil.randomNumber(1, 100, gen);
+                int y = rnd.nextInt(1, 100);
                 boolean customerByName=false;
                 String customerLastName = null;
                 customerID = -1;
@@ -315,17 +314,17 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 {
                     // 60% lookups by last name
                     customerByName = true;
-                    customerLastName = jTPCCUtil.getLastName(gen);
+                    customerLastName = rnd.getCLast();
                     printMessage("Last name lookup = " + customerLastName);
                 }
                 else
                 {
                     // 40% lookups by customer ID
                     customerByName = false;
-                    customerID = jTPCCUtil.getCustomerID(gen);
+                    customerID = rnd.getCustomerID();
                 }
 
-                float paymentAmount = (float)(jTPCCUtil.randomNumber(100, 500000, gen)/100.0);
+                float paymentAmount = (float)(rnd.nextInt(100, 500000) / 100.0);
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Payment)...");
@@ -334,7 +333,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
 
             case STOCK_LEVEL:
-                int threshold = jTPCCUtil.randomNumber(10, 20, gen);
+                int threshold = rnd.nextInt(10, 20);
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Stock-Level)...");
@@ -343,9 +342,9 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
 
             case ORDER_STATUS:
-                districtID = jTPCCUtil.randomNumber(1, 10, gen);
+                districtID = rnd.nextInt(1, 10);
 
-                y = jTPCCUtil.randomNumber(1, 100, gen);
+                y = rnd.nextInt(1, 100);
                 customerByName=false;
                 customerLastName = null;
                 customerID = -1;
@@ -354,14 +353,14 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 {
                     // 60% lookups by last name
                     customerByName = true;
-                    customerLastName = jTPCCUtil.getLastName(gen);
+                    customerLastName = rnd.getCLast();
                     printMessage("Last name lookup = " + customerLastName);
                 }
                 else
                 {
                     // 40% lookups by customer ID
                     customerByName = false;
-                    customerID = jTPCCUtil.getCustomerID(gen);
+                    customerID = rnd.getCustomerID();
                 }
 
                 terminalMessage("");
@@ -371,7 +370,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
 
             case DELIVERY:
-                int orderCarrierID = jTPCCUtil.randomNumber(1, 10, gen);
+                int orderCarrierID = rnd.nextInt(1, 10);
 
                 terminalMessage("");
                 terminalMessage("Starting transaction #" + transactionCount + " (Delivery)...");
@@ -628,7 +627,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             {
                 if (ordStatCountCust == null) {
                   ordStatCountCust = conn.prepareStatement(
-                    "SELECT count(*) AS namecnt FROM benchmarksql.customer" +
+                    "SELECT count(*) as namecnt FROM benchmarksql.customer" +
                     " WHERE c_last = ? AND c_d_id = ? AND c_w_id = ?");
                 }
 
@@ -663,10 +662,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
                 rs = ordStatGetCust.executeQuery();
                 if (!rs.next()) {
-                    error("Customer with these conditions does not exist");
-                    customerLastName = jTPCCUtil.getLastName(gen);
-                    printMessage("New last name lookup = " + customerLastName);
-                    orderStatusTransaction(w_id, d_id, c_id, c_last, c_by_name);
+                    throw new Exception("Customer with these conditions does not exist");
                 }
 
                 if(namecnt%2 == 1) namecnt++;
@@ -1356,10 +1352,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
                   rs = payCountCust.executeQuery();
                   if (!rs.next()) {
-                      error("Customer with these conditions does not exist");
-                      String customernewLastName = jTPCCUtil.getLastName(gen);
-                      printMessage("New last name lookup = " + customernewLastName);
-                      paymentTransaction(w_id, c_w_id, h_amount, d_id, c_d_id, c_id, customernewLastName, c_by_name);
+                      throw new Exception("Customer with these conditions does not exist");
                   }
 
                   namecnt = rs.getInt("namecnt");

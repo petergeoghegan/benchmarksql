@@ -84,7 +84,8 @@ public class jTPCCRandom
 	    	continue;
 	    if (delta < 65 || delta > 119)
 	    	continue;
-	} while(false);
+	    break;
+	} while(true);
 
 	initialized = true;
     }

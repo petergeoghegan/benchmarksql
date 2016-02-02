@@ -850,14 +850,35 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
         float ol_amount, total_amount = 0;
         boolean newOrderRowInserted;
 
-        Warehouse whse = new Warehouse();
-        Customer  cust = new Customer();
-        District  dist = new District();
-        NewOrder  nwor = new NewOrder();
-        Oorder    ordr = new Oorder();
-        OrderLine orln = new OrderLine();
-        Stock     stck = new Stock();
-        Item      item = new Item();
+	/*
+	 * We are selecting the stock rows for update below. There is
+	 * a chance that another concurrent transaction is ordering
+	 * the same items from the same warehouses but that the order
+	 * lines are in a different sort order. To avoid the resulting
+	 * deadlock we must sort the order lines by itemID.
+	 */
+	for (int idx1 = 0; idx1 < o_ol_cnt - 1; idx1++)
+	{
+	    for (int idx2 = idx1 + 1; idx2 < o_ol_cnt; idx2++)
+	    {
+	        if (itemIDs[idx2] == -12345)
+		    continue;
+		if (itemIDs[idx1] > itemIDs[idx2])
+		{
+		    int tmpItemID = itemIDs[idx1];
+		    int tmpSuppWH = supplierWarehouseIDs[idx1];
+		    int tmpQuant  = orderQuantities[idx1];
+
+		    itemIDs[idx1] = itemIDs[idx2];
+		    supplierWarehouseIDs[idx1] = supplierWarehouseIDs[idx2];
+		    orderQuantities[idx1] = orderQuantities[idx2];
+
+		    itemIDs[idx2] = tmpItemID;
+		    supplierWarehouseIDs[idx2] = tmpSuppWH;
+		    orderQuantities[idx2] = tmpQuant;
+		}
+	    }
+	}
 
         try {
 

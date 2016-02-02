@@ -675,7 +675,6 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
                 c_first = rs.getString("c_first");
                 c_middle = rs.getString("c_middle");
                 c_balance = rs.getFloat("c_balance");
-                ordStatCountCust = null;//////
                 rs.close();
                 rs = null;
             } else {

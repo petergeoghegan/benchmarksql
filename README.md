@@ -14,6 +14,15 @@ Version 5.0.0 TBD lussman & jannicash:
   +  Added a switch to disable terminal-warehouse association, spreading
      the data access over all configured warehouses.
 
+Version 4.1.2 TBD jannicash:
+-----------------------------------
+  + Fixed one more preparedStatement() leak. Hopefully with the help
+    of Oracle's V$OPEN_CURSOR view we got them all now.
+  + Fixed a possible deadlock problem in the NEW_ORDER transaction.
+    Multiple parallel transaction could attempt to lock the same
+    STOCK rows in reverse order. Sorting the order lines by item ID
+    avoids this problem.
+
 Version 4.1.1 2016-01-31 jannicash:
 -----------------------------------
   + Changed the status line to update only once per second. The previous

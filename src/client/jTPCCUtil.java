@@ -75,7 +75,6 @@ public class jTPCCUtil implements jTPCCConfig
 	    stmtGetConfig = dbConn.prepareStatement(
 		"SELECT cfg_value FROM bmsql_config " +
 		" WHERE cfg_name = ?");
-	    }
 	}
 	stmtGetConfig.setString(1, option);
 	rs = stmtGetConfig.executeQuery();

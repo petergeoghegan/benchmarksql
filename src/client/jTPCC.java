@@ -158,16 +158,22 @@ public class jTPCC implements jTPCCConfig
 		dbProps.setProperty("password", iPassword);
 
 		/*
-		 * TODO: Tried this in an attempt to get Firebird to handle
-		 * more than one terminal, but that didn't do the trick.
+		 * Fine tuning of database conneciton parameters if needed.
 		 */
-		/*
 		switch (dbType)
 		{
 		    case DB_FIREBIRD:
+			/*
+			 * Firebird needs no_rec_version for our load
+			 * to work. Even with that some "deadlocks"
+			 * occur. Note that the message "deadlock" in
+			 * Firebird can mean something completely different,
+			 * namely that there was a conflicting write to
+			 * a row that could not be resolved.
+			 */
 			dbProps.setProperty("TRANSACTION_READ_COMMITTED", 
 				"isc_tpb_read_committed," +
-				"isc_tpb_rec_version," +
+				"isc_tpb_no_rec_version," +
 				"isc_tpb_write," +
 				"isc_tpb_wait");
 			break;
@@ -175,7 +181,6 @@ public class jTPCC implements jTPCCConfig
 		    default:
 			    break;
 		}
-		*/
 
 		try {
 		    CLoad = Long.parseLong(jTPCCUtil.getConfig(iConn,

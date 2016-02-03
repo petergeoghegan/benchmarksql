@@ -153,9 +153,33 @@ public class jTPCC implements jTPCCConfig
 		boolean terminalWarehouseFixed = true;
 		long CLoad;
 
+		Properties dbProps = new Properties();
+		dbProps.setProperty("user", iUser);
+		dbProps.setProperty("password", iPassword);
+
+		/*
+		 * TODO: Tried this in an attempt to get Firebird to handle
+		 * more than one terminal, but that didn't do the trick.
+		 */
+		/*
+		switch (dbType)
+		{
+		    case DB_FIREBIRD:
+			dbProps.setProperty("TRANSACTION_READ_COMMITTED", 
+				"isc_tpb_read_committed," +
+				"isc_tpb_rec_version," +
+				"isc_tpb_write," +
+				"isc_tpb_wait");
+			break;
+
+		    default:
+			    break;
+		}
+		*/
+
 		try {
 		    CLoad = Long.parseLong(jTPCCUtil.getConfig(iConn,
-				    iUser, iPassword, "nURandCLast"));
+				    dbProps, "nURandCLast"));
 		} catch (Exception e) {
 		    errorMessage(e.getMessage());
 		    throw e;
@@ -314,7 +338,7 @@ public class jTPCC implements jTPCCConfig
                         String terminalName = "Term-" + (i>=9 ? ""+(i+1) : "0"+(i+1));
                         Connection conn = null;
                         printMessage("Creating database connection for " + terminalName + "...");
-                        conn = DriverManager.getConnection(database, username, password);
+                        conn = DriverManager.getConnection(database, dbProps);
 			conn.setAutoCommit(false);
 
                         jTPCCTerminal terminal = new jTPCCTerminal

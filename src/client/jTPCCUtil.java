@@ -63,7 +63,7 @@ public class jTPCCUtil implements jTPCCConfig
 	return dS.length() > 6 ? dS.substring(0, 6) : dS;
     }
 
-    public static String getConfig(String db, String user, String pass, String option)
+    public static String getConfig(String db, Properties dbProps, String option)
 	throws Exception
     {
 	ResultSet   rs;
@@ -71,10 +71,11 @@ public class jTPCCUtil implements jTPCCConfig
 
 	if (dbConn == null)
 	{
-	    dbConn = DriverManager.getConnection(db, user, pass);
+	    dbConn = DriverManager.getConnection(db, dbProps);
 	    stmtGetConfig = dbConn.prepareStatement(
 		"SELECT cfg_value FROM bmsql_config " +
 		" WHERE cfg_name = ?");
+	    }
 	}
 	stmtGetConfig.setString(1, option);
 	rs = stmtGetConfig.executeQuery();

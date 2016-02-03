@@ -1,21 +1,21 @@
-drop table benchmarksql.config;
+drop table bmsql_config;
 
-drop table benchmarksql.warehouse;
+drop table bmsql_warehouse;
 
-drop table benchmarksql.item;
+drop table bmsql_item;
 
-drop table benchmarksql.stock;
+drop table bmsql_stock;
 
-drop table benchmarksql.district;
+drop table bmsql_district;
 
-drop table benchmarksql.customer;
+drop table bmsql_customer;
 
-drop table benchmarksql.oorder;
+drop table bmsql_oorder;
 
-drop table benchmarksql.order_line;
+drop table bmsql_order_line;
 
-drop table benchmarksql.history;
+drop table bmsql_history;
 
-drop sequence benchmarksql.hist_id_seq;
+drop sequence bmsql_hist_id_seq;
 
-drop table benchmarksql.new_order;
+drop table bmsql_new_order;

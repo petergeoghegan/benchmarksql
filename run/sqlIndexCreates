@@ -1,32 +1,32 @@
 
-alter table benchmarksql.warehouse add constraint pk_warehouse
+alter table bmsql_warehouse add constraint bmsql_warehouse_pkey
   primary key (w_id);
 
-alter table benchmarksql.district add constraint pk_district
+alter table bmsql_district add constraint bmsql_district_pkey
   primary key (d_w_id, d_id);
 
-alter table benchmarksql.customer add constraint pk_customer
+alter table bmsql_customer add constraint bmsql_customer_pkey
   primary key (c_w_id, c_d_id, c_id);
 
-create index ndx_customer_name
-  on  benchmarksql.customer (c_w_id, c_d_id, c_last, c_first);
+create index bmsql_customer_idx1
+  on  bmsql_customer (c_w_id, c_d_id, c_last, c_first);
 
-alter table benchmarksql.oorder add constraint pk_oorder
+alter table bmsql_oorder add constraint bmsql_oorder_pkey
   primary key (o_w_id, o_d_id, o_id);
 
-create unique index ndx_oorder_carrier
-  on  benchmarksql.oorder (o_w_id, o_d_id, o_carrier_id, o_id);
+create unique index bmsql_oorder_idx1
+  on  bmsql_oorder (o_w_id, o_d_id, o_carrier_id, o_id);
 
-alter table benchmarksql.new_order add constraint pk_new_order
+alter table bmsql_new_order add constraint bmsql_new_order_pkey
   primary key (no_w_id, no_d_id, no_o_id);
 
-alter table benchmarksql.order_line add constraint pk_order_line
+alter table bmsql_order_line add constraint bmsql_order_line_pkey
   primary key (ol_w_id, ol_d_id, ol_o_id, ol_number);
 
-alter table benchmarksql.stock add constraint pk_stock
+alter table bmsql_stock add constraint bmsql_stock_pkey
   primary key (s_w_id, s_i_id);
 
-alter table benchmarksql.item add constraint pk_item
+alter table bmsql_item add constraint bmsql_item_pkey
   primary key (i_id);
 
 vacuum analyze;

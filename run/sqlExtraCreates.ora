@@ -13,30 +13,30 @@
 --	with Oracle 11g, using the sequence in a trigger.
 -- ----
 -- Adjust the sequence above the current max(hist_id)
-alter sequence benchmarksql.hist_id_seq increment by 30000;
+alter sequence bmsql_hist_id_seq increment by 30000;
 declare
     n integer\;
     i integer\;
     dummy integer\;
 begin
-    select max(hist_id) into n from benchmarksql.history\;
+    select max(hist_id) into n from bmsql_history\;
     i := 0\;
     while i <= n loop
-	select benchmarksql.hist_id_seq.nextval into dummy from dual\;
+	select bmsql_hist_id_seq.nextval into dummy from dual\;
 	i := i + 30000\;
     end loop\;
 end\;
 ;
-alter sequence benchmarksql.hist_id_seq increment by 1;
+alter sequence bmsql_hist_id_seq increment by 1;
 
 -- Create a trigger that forces hist_id to be hist_id_seq.nextval
-create trigger benchmarksql.history_before_insert
-    before insert on benchmarksql.history
+create trigger bmsql_history_before_insert
+    before insert on bmsql_history
     for each row
     begin
-	select benchmarksql.hist_id_seq.nextval into :new.hist_id from dual\;
+	select bmsql_hist_id_seq.nextval into :new.hist_id from dual\;
     end\;
 ;
 
 -- Add a primary key history(hist_id)
-alter table benchmarksql.history add primary key (hist_id);
+alter table bmsql_history add primary key (hist_id);

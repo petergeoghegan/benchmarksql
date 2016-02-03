@@ -73,7 +73,7 @@ public class jTPCCUtil implements jTPCCConfig
 	{
 	    dbConn = DriverManager.getConnection(db, user, pass);
 	    stmtGetConfig = dbConn.prepareStatement(
-		"SELECT cfg_value FROM benchmarksql.config " +
+		"SELECT cfg_value FROM bmsql_config " +
 		" WHERE cfg_name = ?");
 	}
 	stmtGetConfig.setString(1, option);

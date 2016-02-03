@@ -1,13 +1,9 @@
-DROP SCHEMA IF EXISTS benchmarksql CASCADE;
-
-CREATE SCHEMA benchmarksql;
-
-create table benchmarksql.config (
+create table bmsql_config (
   cfg_name    varchar(30) primary key,
   cfg_value   varchar(50)
 );
 
-create table benchmarksql.warehouse (
+create table bmsql_warehouse (
   w_id        integer   not null,
   w_ytd       decimal(12,2),
   w_tax       decimal(4,4),
@@ -19,7 +15,7 @@ create table benchmarksql.warehouse (
   w_zip       char(9)
 );
 
-create table benchmarksql.district (
+create table bmsql_district (
   d_w_id       integer       not null,
   d_id         integer       not null,
   d_ytd        decimal(12,2),
@@ -33,7 +29,7 @@ create table benchmarksql.district (
   d_zip        char(9)
 );
 
-create table benchmarksql.customer (
+create table bmsql_customer (
   c_w_id         integer        not null,
   c_d_id         integer        not null,
   c_id           integer        not null,
@@ -57,9 +53,9 @@ create table benchmarksql.customer (
   c_data         varchar(500)
 );
 
-create sequence benchmarksql.hist_id_seq;
+create sequence bmsql_hist_id_seq;
 
-create table benchmarksql.history (
+create table bmsql_history (
   hist_id  integer,
   h_c_id   integer,
   h_c_d_id integer,
@@ -72,7 +68,7 @@ create table benchmarksql.history (
 );
 
 
-create table benchmarksql.oorder (
+create table bmsql_oorder (
   o_w_id       integer      not null,
   o_d_id       integer      not null,
   o_id         integer      not null,
@@ -84,14 +80,14 @@ create table benchmarksql.oorder (
 );
 
 
-create table benchmarksql.new_order (
+create table bmsql_new_order (
   no_w_id  integer   not null,
   no_d_id  integer   not null,
   no_o_id  integer   not null
 );
 
 
-create table benchmarksql.order_line (
+create table bmsql_order_line (
   ol_w_id         integer   not null,
   ol_d_id         integer   not null,
   ol_o_id         integer   not null,
@@ -105,7 +101,7 @@ create table benchmarksql.order_line (
 );
 
 
-create table benchmarksql.stock (
+create table bmsql_stock (
   s_w_id       integer       not null,
   s_i_id       integer       not null,
   s_quantity   decimal(4,0),
@@ -126,7 +122,7 @@ create table benchmarksql.stock (
 );
 
 
-create table benchmarksql.item (
+create table bmsql_item (
   i_id     integer      not null,
   i_name   varchar(24),
   i_price  decimal(5,2),

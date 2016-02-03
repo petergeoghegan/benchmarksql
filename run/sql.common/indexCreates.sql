@@ -29,4 +29,3 @@ alter table bmsql_stock add constraint bmsql_stock_pkey
 alter table bmsql_item add constraint bmsql_item_pkey
   primary key (i_id);
 
-vacuum analyze;

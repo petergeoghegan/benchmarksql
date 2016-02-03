@@ -1,10 +1,8 @@
 -- ----
--- Extra Schema objects/definitions for Oracle
+-- Extra Schema objects/definitions for history.hist_id in Oracle
 -- ----
 
 -- ----
--- history.hist_id
---
 --	This is an extra column not present in the TPC-C
 --	specs. It is useful for replication systems like
 --	Bucardo and Slony-I, which like to have a primary
@@ -34,7 +32,9 @@ create trigger bmsql_history_before_insert
     before insert on bmsql_history
     for each row
     begin
-	select bmsql_hist_id_seq.nextval into :new.hist_id from dual\;
+	if :new.hist_id is null then
+	    select bmsql_hist_id_seq.nextval into :new.hist_id from dual\;
+	end if\;
     end\;
 ;
 

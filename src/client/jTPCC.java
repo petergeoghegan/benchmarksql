@@ -103,7 +103,9 @@ public class jTPCC implements jTPCCConfig
 
         log.info("Term-00, ");
 
-	if (iDB.equals("oracle"))
+	if (iDB.equals("firebird"))
+	    dbType = DB_FIREBIRD;
+	else if (iDB.equals("oracle"))
 	    dbType = DB_ORACLE;
 	else if (iDB.equals("postgres"))
 	    dbType = DB_POSTGRES;

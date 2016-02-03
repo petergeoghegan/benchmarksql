@@ -13,8 +13,9 @@ public interface jTPCCConfig
     public final static String JTPCCVERSION = "5.0";
 
     public final static int	DB_UNKNOWN = 0,
-				DB_ORACLE = 1,
-				DB_POSTGRES = 2;
+				DB_FIREBIRD = 1,
+				DB_ORACLE = 2,
+				DB_POSTGRES = 3;
 
     public final static int	NEW_ORDER = 1,
 				PAYMENT = 2,

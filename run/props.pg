@@ -5,6 +5,8 @@ user=benchmarksql
 password=PWbmsql
 
 warehouses=1
+loadWorkers=4
+
 terminals=1
 //To run specified transactions per terminal- runMins must equal zero
 runTxnsPerTerminal=10

@@ -34,12 +34,12 @@ copy bmsql_history
 
 copy bmsql_oorder
   (o_id, o_w_id, o_d_id, o_c_id, o_carrier_id, o_ol_cnt, o_all_local, o_entry_d)
-  from '/tmp/csv/order.csv' WITH CSV;
+  from '/tmp/csv/order.csv' WITH CSV NULL AS 'NULL';
 
 copy bmsql_order_line
   (ol_w_id, ol_d_id, ol_o_id, ol_number, ol_i_id, ol_delivery_d,
    ol_amount, ol_supply_w_id, ol_quantity, ol_dist_info)
-  from '/tmp/csv/order-line.csv' WITH CSV;
+  from '/tmp/csv/order-line.csv' WITH CSV NULL AS 'NULL';
 
 copy bmsql_new_order
   (no_w_id, no_d_id, no_o_id)

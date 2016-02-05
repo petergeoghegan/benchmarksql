@@ -108,7 +108,7 @@ create table bmsql_item (
 create table bmsql_stock (
   s_w_id       integer       not null,
   s_i_id       integer       not null,
-  s_quantity   decimal(4,0),
+  s_quantity   integer,
   s_ytd        decimal(8,2),
   s_order_cnt  integer,
   s_remote_cnt integer,

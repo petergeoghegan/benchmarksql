@@ -1,18 +1,8 @@
 /*
- * Copyright (C) 2004-2014, Denis Lussier
+ * Copyright (C) 2016, Jan Wieck
  *
- * LoadData - Load Sample Data directly into database tables or create CSV files for
- *            each table that can then be bulk loaded (again & again & again ...)  :-)
- *
- *    Two optional parameter sets for the command line:
- *
- *                 numWarehouses=9999
- *
- *                 fileLocation=/temp/csv/
- *
- *    "numWarehouses" defaults to "1" and when "fileLocation" is omitted the generated
- *    data is loaded into the database tables directly.
- ***************************************************************************************
+ * LoadData - Load Sample Data directly into database tables or into
+ * CSV files using multiple parallel workers.
  */
 
 import java.sql.*;
@@ -20,1169 +10,388 @@ import java.util.*;
 import java.io.*;
 import java.lang.Integer;
 
-public class LoadData implements jTPCCConfig {
+public class LoadData
+{
+    private static Properties   ini = new Properties();
+    private static String       db;
+    private static Properties   dbProps;
+    private static jTPCCRandom  rnd;
+    private static String       fileLocation = null;
+    private static String       csvNullValue = null;
 
+    private static int          numWarehouses;
+    private static int          numWorkers;
+    private static int          nextJob = 0;
+    private static Object       nextJobLock = new Object();
 
-  // *********** JDBC specific variables ***********************
-  private static Connection         conn       = null;
-  private static Statement          stmt       = null;
-  private static java.sql.Timestamp sysdate    = null;
-  private static PreparedStatement  confPrepStmt;
-  private static PreparedStatement  custPrepStmt;
-  private static PreparedStatement  distPrepStmt;
-  private static PreparedStatement  histPrepStmt;
-  private static PreparedStatement  itemPrepStmt;
-  private static PreparedStatement  nworPrepStmt;
-  private static PreparedStatement  ordrPrepStmt;
-  private static PreparedStatement  orlnPrepStmt;
-  private static PreparedStatement  stckPrepStmt;
-  private static PreparedStatement  whsePrepStmt;
+    private static LoadDataWorker[] workers;
+    private static Thread[]     workerThreads;
 
-  // ********** general vars **********************************
-  private static java.util.Date     now        = null;
-  private static java.util.Date     startDate  = null;
-  private static java.util.Date     endDate    = null;
+    private static String[]     argv;
 
-  private static jTPCCRandom	    rnd;
-  private static String             dbType;
-  private static int                numWarehouses = 0;
-  private static String             fileLocation  = "";
-  private static boolean            outputFiles   = false;
-  private static PrintWriter        out           = null;
-  private static long               lastTimeMS    = 0;
+    private static boolean              writeCSV = false;
+    private static BufferedWriter       configCSV = null;
+    private static BufferedWriter       itemCSV = null;
+    private static BufferedWriter       warehouseCSV = null;
+    private static BufferedWriter       districtCSV = null;
+    private static BufferedWriter       stockCSV = null;
+    private static BufferedWriter       customerCSV = null;
+    private static BufferedWriter       historyCSV = null;
+    private static BufferedWriter       orderCSV = null;
+    private static BufferedWriter       orderLineCSV = null;
+    private static BufferedWriter       newOrderCSV = null;
 
+    public static void main(String[] args) {
+	int     i;
 
-  public static void main(String[] args) {
+	System.out.println("Starting BenchmarkSQL LoadData");
+	System.out.println("");
 
-      System.out.println("Starting BenchmarkSQL LoadData");
-
-      System.out.println("----------------- Initialization -------------------");
-
-      numWarehouses = configWhseCount;
-      for (int i = 0; i < args.length; i++)
-      {
-	      System.out.println(args[i]);
-	      String str = args[i];
-	      if (str.toLowerCase().startsWith("numwarehouses"))
-	      {
-	         String val = args[i + 1];
-    	         numWarehouses = Integer.parseInt(val);
-              }
-
-	      if (str.toLowerCase().startsWith("filelocation"))
-	      {
-                 fileLocation = args[i + 1];
-                 outputFiles = true;
-              }
-      }
-
-
-      if (outputFiles == false) {
-        initJDBC();
-      }
-
-      // create the random data generator
-      rnd = new jTPCCRandom();
-
-
-    //######################### MAINLINE ######################################
-      startDate = new java.util.Date();
-      System.out.println("");
-      System.out.println("------------- LoadData StartTime = " + startDate +
-                       "-------------");
-
-      long startTimeMS = new java.util.Date().getTime();
-      lastTimeMS = startTimeMS;
-
-      System.out.println("");
-      loadConfig();
-      System.out.println("");
-      long totalRows = loadWhse(numWarehouses);
-      System.out.println("");
-      totalRows += loadItem(configItemCount);
-      System.out.println("");
-      totalRows += loadStock(numWarehouses, configItemCount);
-      System.out.println("");
-      totalRows += loadDist(numWarehouses, configDistPerWhse);
-      System.out.println("");
-      totalRows += loadCust(numWarehouses, configDistPerWhse, configCustPerDist);
-      System.out.println("");
-      totalRows += loadOrder(numWarehouses, configDistPerWhse, configCustPerDist);
-
-      long runTimeMS = (new java.util.Date().getTime()) + 1 - startTimeMS;
-      endDate = new java.util.Date();
-      System.out.println("");
-      System.out.println("------------- LoadJDBC Statistics --------------------");
-      System.out.println("     Start Time = " + startDate);
-      System.out.println("       End Time = " + endDate);
-      System.out.println("       Run Time = " + (int)runTimeMS/1000 + " Seconds");
-      System.out.println("    Rows Loaded = " + totalRows + " Rows");
-      System.out.println("Rows Per Second = "  + (totalRows/(runTimeMS/1000)) + " Rows/Sec");
-      System.out.println("------------------------------------------------------");
-
-      //exit Cleanly
-      try {
-        if (outputFiles == false)
-        {
-          if (conn !=null)
-             conn.close();
-	    }
-      } catch(SQLException se) {
-        se.printStackTrace();
-      } // end try
-
-  } // end main
-
-
-  static void transRollback () {
-      if (outputFiles == false)
-      {
-        try {
-          conn.rollback();
-        } catch(SQLException se) {
-          System.out.println(se.getMessage());
-        }
-	  } else {
-		  out.close();
-      }
-  }
-
-
-  static void transCommit() {
-	  if (outputFiles == false)
-	  {
-        try {
-          conn.commit();
-        } catch(SQLException se) {
-          System.out.println(se.getMessage());
-          transRollback();
-        }
-	  } else {
-		  out.close();
-      }
-  }
-
-
-static void initJDBC() {
-
-  try {
-
-    // load the ini file
-    Properties ini = new Properties();
-    ini.load( new FileInputStream(System.getProperty("prop")));
-
-    // display the values we need
-    System.out.println("driver=" + ini.getProperty("driver"));
-    System.out.println("conn=" + ini.getProperty("conn"));
-    System.out.println("user=" + ini.getProperty("user"));
-    System.out.println("password=******");
-
-    // Register jdbcDriver
-    Class.forName(ini.getProperty( "driver" ));
-
-    // make connection
-    conn = DriverManager.getConnection(ini.getProperty("conn"),
-      ini.getProperty("user"),ini.getProperty("password"));
-    conn.setAutoCommit(false);
-
-    // Create Statement
-    stmt = conn.createStatement();
-
-    confPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_config " +
-       " (cfg_name, cfg_value) " +
-       "VALUES (?, ?)");
-
-    distPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_district " +
-       " (d_id, d_w_id, d_ytd, d_tax, d_next_o_id, d_name, d_street_1, d_street_2, d_city, d_state, d_zip) " +
-       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    itemPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_item " +
-       " (i_id, i_name, i_price, i_data, i_im_id) " +
-       "VALUES (?, ?, ?, ?, ?)");
-
-    custPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_customer " +
-       " (c_id, c_d_id, c_w_id, " +
-         "c_discount, c_credit, c_last, c_first, c_credit_lim, " +
-         "c_balance, c_ytd_payment, c_payment_cnt, c_delivery_cnt, " +
-         "c_street_1, c_street_2, c_city, c_state, c_zip, " +
-         "c_phone, c_since, c_middle, c_data) " +
-       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    histPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_history " +
-       " (hist_id, h_c_id, h_c_d_id, h_c_w_id, " +
-         "h_d_id, h_w_id, " +
-         "h_date, h_amount, h_data) " +
-       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    ordrPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_oorder " +
-       " (o_id, o_w_id,  o_d_id, o_c_id, " +
-         "o_carrier_id, o_ol_cnt, o_all_local, o_entry_d) " +
-       "VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-
-    orlnPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_order_line " +
-       " (ol_w_id, ol_d_id, ol_o_id, " +
-         "ol_number, ol_i_id, ol_delivery_d, " +
-         "ol_amount, ol_supply_w_id, ol_quantity, ol_dist_info) " +
-       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    nworPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_new_order " +
-       " (no_w_id, no_d_id, no_o_id) " +
-       "VALUES (?, ?, ?)");
-
-    stckPrepStmt = conn.prepareStatement
-      ("INSERT INTO bmsql_stock " +
-       " (s_i_id, s_w_id, s_quantity, s_ytd, s_order_cnt, s_remote_cnt, s_data, " +
-         "s_dist_01, s_dist_02, s_dist_03, s_dist_04, s_dist_05, " +
-         "s_dist_06, s_dist_07, s_dist_08, s_dist_09, s_dist_10) " +
-       "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-    whsePrepStmt = conn.prepareStatement
-       ("INSERT INTO bmsql_warehouse " +
-        " (w_id, w_ytd, w_tax, w_name, w_street_1, w_street_2, w_city, w_state, w_zip) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-  } catch(SQLException se) {
-    System.out.println(se.getMessage());
-    transRollback();
-
-  } catch(Exception e) {
-    e.printStackTrace();
-    transRollback();
-
-  }  // end try
-
-} // end initJDBC()
-
-
-  static void loadConfig() {
-      if (outputFiles == true)
-      {
-        try {
-	  out = new PrintWriter(new FileOutputStream(fileLocation + "config.csv"));
-	  System.out.println("Writing Config file to: " + fileLocation + "config.csv");
-
-	  out.println("warehouses," + numWarehouses);
-	  out.println("nURandCLast," + rnd.getNURandCLast());
-	  out.println("nURandCC_ID," + rnd.getNURandCC_ID());
-	  out.println("nURandCI_ID," + rnd.getNURandCI_ID());
-
-	  out.close();
-	  out = null;
-	  return;
-        } catch (Exception e) {
-	  System.err.println(e.getMessage());
+	/*
+	 * Load the Benchmark properties file.
+	 */
+	try
+	{
+	    ini.load(new FileInputStream(System.getProperty("prop")));
 	}
-      }
-
-      try {
-          if (outputFiles == false)
-          {
-            confPrepStmt.setString(1, "warehouses");
-            confPrepStmt.setString(2, "" + numWarehouses);
-	    confPrepStmt.execute();
-
-            confPrepStmt.setString(1, "nURandCLast");
-            confPrepStmt.setString(2, "" + rnd.getNURandCLast());
-	    confPrepStmt.execute();
-
-            confPrepStmt.setString(1, "nURandCC_ID");
-            confPrepStmt.setString(2, "" + rnd.getNURandCC_ID());
-	    confPrepStmt.execute();
-
-            confPrepStmt.setString(1, "nURandCI_ID");
-            confPrepStmt.setString(2, "" + rnd.getNURandCI_ID());
-	    confPrepStmt.execute();
-
-	    transCommit();
-          }
-      } catch(SQLException se) {
-        System.out.println(se.getMessage());
-        transRollback();
-      } catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-      }
-  } // end loadConfig()
-
-  static int loadItem(int itemKount) {
-
-      int k = 0;
-      int t = 0;
-      int randPct = 0;
-      int len = 0;
-      int startORIGINAL = 0;
-
-      try {
-
-        now = new java.util.Date();
-        t = itemKount;
-        System.out.println("Start Item Load for " + t + " Items @ " + now + " ...");
-
-        if (outputFiles == true)
-        {
-            out = new PrintWriter(new FileOutputStream(fileLocation + "item.csv"));
-            System.out.println("Writing Item file to: " + fileLocation + "item.csv");
-        }
-
-        Item item  = new Item();
-
-        for (int i=1; i <= itemKount; i++) {
-
-          item.i_id = i;
-	  item.i_im_id = rnd.nextInt(1, 10000);
-          item.i_name = rnd.getAString(14, 24);
-          item.i_price = (float)(rnd.nextInt(100, 10000) / 100.0);
-
-          // i_data
-          randPct = rnd.nextInt(1, 100);
-          len = rnd.nextInt(26, 50);
-          if ( randPct > 10 ) {
-             // 90% of time i_data isa random string of length [26 .. 50]
-             item.i_data = rnd.getAString(len, len);
-          } else {
-            // 10% of time i_data has "ORIGINAL" crammed somewhere in middle
-            startORIGINAL = rnd.nextInt(2, (len - 8));
-            item.i_data =
-              rnd.getAString(startORIGINAL - 1, startORIGINAL - 1) +
-              "ORIGINAL" +
-              rnd.getAString(len - startORIGINAL - 9, len - startORIGINAL - 9);
-          }
-
-          k++;
-
-          if (outputFiles == false)
-          {
-            itemPrepStmt.setLong(1, item.i_id);
-            itemPrepStmt.setString(2, item.i_name);
-            itemPrepStmt.setDouble(3, item.i_price);
-            itemPrepStmt.setString(4, item.i_data);
-            itemPrepStmt.setLong(5, item.i_im_id);
-            itemPrepStmt.addBatch();
-
-            if (( k % configCommitCount) == 0) {
-              long tmpTime = new java.util.Date().getTime();
-              String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-              System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-              lastTimeMS = tmpTime;
-              itemPrepStmt.executeBatch();
-              itemPrepStmt.clearBatch();
-              transCommit();
-            }
-	      } else {
-			String str = "";
-            str = str + item.i_id + ",";
-            str = str + item.i_name + ",";
-            str = str + item.i_price + ",";
-            str = str + item.i_data + ",";
-            str = str + item.i_im_id;
-    		out.println(str);
-
-            if (( k % configCommitCount) == 0) {
-              long tmpTime = new java.util.Date().getTime();
-              String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-              System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-              lastTimeMS = tmpTime;
-		    }
-		  }
-
-        } // end for
-
-        long tmpTime = new java.util.Date().getTime();
-        String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-        System.out.println(etStr.substring(0, 30) + "  Writing final records " + k + " of " + t);
-        lastTimeMS = tmpTime;
-
-        if (outputFiles == false)
-        {
-          itemPrepStmt.executeBatch();
-	    }
-        transCommit();
-        now = new java.util.Date();
-        System.out.println("End Item Load @  " + now);
-
-      } catch(SQLException se) {
-        System.out.println(se.getMessage());
-        transRollback();
-      } catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-      }
-
-      return(k);
-
-} // end loadItem()
-
-
-
-  static int loadWhse(int whseKount) {
-
-      try {
-
-        now = new java.util.Date();
-        System.out.println("Start Whse Load for " + whseKount + " Whses @ " + now + " ...");
-
-        if (outputFiles == true)
-        {
-            out = new PrintWriter(new FileOutputStream(fileLocation + "warehouse.csv"));
-            System.out.println("Writing Warehouse file to: " + fileLocation + "warehouse.csv");
-        }
-
-        Warehouse warehouse  = new Warehouse();
-        for (int i=1; i <= whseKount; i++) {
-
-          warehouse.w_id       = i;
-          warehouse.w_ytd      = 300000;
-
-          // random within [0.0000 .. 0.2000]
-          warehouse.w_tax = (float)((rnd.nextInt(0, 2000)) / 10000.0);
-
-          warehouse.w_name     = rnd.getAString(6, 10);
-          warehouse.w_street_1 = rnd.getAString(10, 20);
-          warehouse.w_street_2 = rnd.getAString(10, 20);
-          warehouse.w_city     = rnd.getAString(10, 20);
-          warehouse.w_state    = rnd.getState();
-          warehouse.w_zip      = rnd.getNString(4, 4) + "11111";
-
-          if (outputFiles == false)
-          {
-            whsePrepStmt.setLong(1, warehouse.w_id);
-            whsePrepStmt.setDouble(2, warehouse.w_ytd);
-            whsePrepStmt.setDouble(3, warehouse.w_tax);
-            whsePrepStmt.setString(4, warehouse.w_name);
-            whsePrepStmt.setString(5, warehouse.w_street_1);
-            whsePrepStmt.setString(6, warehouse.w_street_2);
-            whsePrepStmt.setString(7, warehouse.w_city);
-            whsePrepStmt.setString(8, warehouse.w_state);
-            whsePrepStmt.setString(9, warehouse.w_zip);
-            whsePrepStmt.executeUpdate();
-	      } else {
-			String str = "";
-            str = str + warehouse.w_id + ",";
-            str = str + warehouse.w_ytd + ",";
-            str = str + warehouse.w_tax + ",";
-            str = str + warehouse.w_name + ",";
-            str = str + warehouse.w_street_1 + ",";
-            str = str + warehouse.w_street_2 + ",";
-            str = str + warehouse.w_city + ",";
-            str = str + warehouse.w_state + ",";
-            str = str + warehouse.w_zip;
-    		out.println(str);
-	      }
-
-        } // end for
-
-        transCommit();
-        now = new java.util.Date();
-
-        long tmpTime = new java.util.Date().getTime();
-        System.out.println("Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000));
-        lastTimeMS = tmpTime;
-        System.out.println("End Whse Load @  " + now);
-
-      } catch(SQLException se) {
-        System.out.println(se.getMessage());
-        transRollback();
-      } catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-      }
-
-      return (whseKount);
-
-  } // end loadWhse()
-
-
-
-  static int loadStock(int whseKount, int itemKount) {
-
-      int k = 0;
-      int t = 0;
-      int randPct = 0;
-      int len = 0;
-      int startORIGINAL = 0;
-
-      try {
-
-        now = new java.util.Date();
-        t = (whseKount * itemKount);
-        System.out.println("Start Stock Load for " + t + " units @ " + now + " ...");
-
-        if (outputFiles == true)
-        {
-            out = new PrintWriter(new FileOutputStream(fileLocation + "stock.csv"));
-            System.out.println("Writing Stock file to: " + fileLocation + "stock.csv");
-        }
-
-        Stock stock  = new Stock();
-
-        for (int i=1; i <= itemKount; i++) {
-
-          for (int w=1; w <= whseKount; w++) {
-
-            stock.s_i_id = i;
-            stock.s_w_id = w;
-            stock.s_quantity = rnd.nextInt(10, 100);
-            stock.s_ytd = 0;
-            stock.s_order_cnt = 0;
-            stock.s_remote_cnt = 0;
-
-            // s_data
-            randPct = rnd.nextInt(1, 100);
-            len = rnd.nextInt(26, 50);
-            if ( randPct > 10 ) {
-               // 90% of time i_data isa random string of length [26 .. 50]
-               stock.s_data = rnd.getAString(len, len);
-            } else {
-              // 10% of time i_data has "ORIGINAL" crammed somewhere in middle
-              startORIGINAL = rnd.nextInt(2, len - 8);
-              stock.s_data =
-                rnd.getAString(startORIGINAL - 1, startORIGINAL - 1) +
-                "ORIGINAL" +
-                rnd.getAString(len - startORIGINAL - 9, len - startORIGINAL - 9);
-            }
-
-            stock.s_dist_01 = rnd.getAString(24, 24);
-            stock.s_dist_02 = rnd.getAString(24, 24);
-            stock.s_dist_03 = rnd.getAString(24, 24);
-            stock.s_dist_04 = rnd.getAString(24, 24);
-            stock.s_dist_05 = rnd.getAString(24, 24);
-            stock.s_dist_06 = rnd.getAString(24, 24);
-            stock.s_dist_07 = rnd.getAString(24, 24);
-            stock.s_dist_08 = rnd.getAString(24, 24);
-            stock.s_dist_09 = rnd.getAString(24, 24);
-            stock.s_dist_10 = rnd.getAString(24, 24);
-
-          k++;
-          if (outputFiles == false)
-          {
-              stckPrepStmt.setLong(1, stock.s_i_id);
-              stckPrepStmt.setLong(2, stock.s_w_id);
-              stckPrepStmt.setDouble(3, stock.s_quantity);
-              stckPrepStmt.setDouble(4, stock.s_ytd);
-              stckPrepStmt.setLong(5, stock.s_order_cnt);
-              stckPrepStmt.setLong(6, stock.s_remote_cnt);
-              stckPrepStmt.setString(7, stock.s_data);
-              stckPrepStmt.setString(8, stock.s_dist_01);
-              stckPrepStmt.setString(9, stock.s_dist_02);
-              stckPrepStmt.setString(10, stock.s_dist_03);
-              stckPrepStmt.setString(11, stock.s_dist_04);
-              stckPrepStmt.setString(12, stock.s_dist_05);
-              stckPrepStmt.setString(13, stock.s_dist_06);
-              stckPrepStmt.setString(14, stock.s_dist_07);
-              stckPrepStmt.setString(15, stock.s_dist_08);
-              stckPrepStmt.setString(16, stock.s_dist_09);
-              stckPrepStmt.setString(17, stock.s_dist_10);
-              stckPrepStmt.addBatch();
-            if (( k % configCommitCount) == 0) {
-              long tmpTime = new java.util.Date().getTime();
-              String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-              System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-              lastTimeMS = tmpTime;
-              stckPrepStmt.executeBatch();
-              stckPrepStmt.clearBatch();
-              transCommit();
-            }
-	      } else {
-			String str = "";
-              str = str + stock.s_i_id + ",";
-              str = str + stock.s_w_id + ",";
-              str = str + stock.s_quantity + ",";
-              str = str + stock.s_ytd + ",";
-              str = str + stock.s_order_cnt + ",";
-              str = str + stock.s_remote_cnt + ",";
-              str = str + stock.s_data + ",";
-              str = str + stock.s_dist_01 + ",";
-              str = str + stock.s_dist_02 + ",";
-              str = str + stock.s_dist_03 + ",";
-              str = str + stock.s_dist_04 + ",";
-              str = str + stock.s_dist_05 + ",";
-              str = str + stock.s_dist_06 + ",";
-              str = str + stock.s_dist_07 + ",";
-              str = str + stock.s_dist_08 + ",";
-              str = str + stock.s_dist_09 + ",";
-              str = str + stock.s_dist_10;
-              out.println(str);
-
-            if (( k % configCommitCount) == 0) {
-              long tmpTime = new java.util.Date().getTime();
-              String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-              System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-              lastTimeMS = tmpTime;
-		      }
-           }
-
-          } // end for [w]
-
-        } // end for [i]
-
-
-        long tmpTime = new java.util.Date().getTime();
-        String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-        System.out.println(etStr.substring(0, 30) + "  Writing final records " + k + " of " + t);
-        lastTimeMS = tmpTime;
-        if (outputFiles == false)
-        {
-          stckPrepStmt.executeBatch();
-	    }
-        transCommit();
-
-        now = new java.util.Date();
-        System.out.println("End Stock Load @  " + now);
-
-      } catch(SQLException se) {
-        System.out.println(se.getMessage());
-        transRollback();
-
-      } catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-      }
-
-      return (k);
-
-  } // end loadStock()
-
-
-
-  static int loadDist(int whseKount, int distWhseKount) {
-
-      int k = 0;
-      int t = 0;
-
-      try {
-
-        now = new java.util.Date();
-
-        if (outputFiles == true)
-        {
-            out = new PrintWriter(new FileOutputStream(fileLocation + "district.csv"));
-            System.out.println("Writing District file to: " + fileLocation + "district.csv");
-        }
-
-        District district  = new District();
-
-        t = (whseKount * distWhseKount);
-        System.out.println("Start District Data for " + t + " Dists @ " + now + " ...");
-
-        for (int w=1; w <= whseKount; w++) {
-
-          for (int d=1; d <= distWhseKount; d++) {
-
-            district.d_id = d;
-            district.d_w_id = w;
-            district.d_ytd = 30000;
-
-            // random within [0.0000 .. 0.2000]
-            district.d_tax = (float)((rnd.nextInt(0, 2000)) / 10000.0);
-
-            district.d_next_o_id = 3001;
-            district.d_name = rnd.getAString(6, 10);
-            district.d_street_1 = rnd.getAString(10, 20);
-            district.d_street_2 = rnd.getAString(10, 20);
-            district.d_city = rnd.getAString(10, 20);
-            district.d_state = rnd.getState();
-            district.d_zip = rnd.getNString(4, 4) + "11111";
-
-          k++;
-          if (outputFiles == false)
-          {
-              distPrepStmt.setLong(1, district.d_id);
-              distPrepStmt.setLong(2, district.d_w_id);
-              distPrepStmt.setDouble(3, district.d_ytd);
-              distPrepStmt.setDouble(4, district.d_tax);
-              distPrepStmt.setLong(5, district.d_next_o_id);
-              distPrepStmt.setString(6, district.d_name);
-              distPrepStmt.setString(7, district.d_street_1);
-              distPrepStmt.setString(8, district.d_street_2);
-              distPrepStmt.setString(9, district.d_city);
-              distPrepStmt.setString(10, district.d_state);
-              distPrepStmt.setString(11, district.d_zip);
-              distPrepStmt.executeUpdate();
-	      } else {
-              String str = "";
-              str = str + district.d_id + ",";
-              str = str + district.d_w_id + ",";
-              str = str + district.d_ytd + ",";
-              str = str + district.d_tax + ",";
-              str = str + district.d_next_o_id + ",";
-              str = str + district.d_name + ",";
-              str = str + district.d_street_1 + ",";
-              str = str + district.d_street_2 + ",";
-              str = str + district.d_city + ",";
-              str = str + district.d_state + ",";
-              str = str + district.d_zip;
-              out.println(str);
-          }
-
-          } // end for [d]
-
-        } // end for [w]
-
-        long tmpTime = new java.util.Date().getTime();
-        String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-        System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-        lastTimeMS = tmpTime;
-        transCommit();
-        now = new java.util.Date();
-        System.out.println("End District Load @  " + now);
-
-      }
-      catch(SQLException se) {
-        System.out.println(se.getMessage());
-        transRollback();
-      }
-      catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-      }
-
-      return (k);
-
-  } // end loadDist()
-
-
-
-  static int loadCust(int whseKount, int distWhseKount, int custDistKount) {
-
-      int k = 0;
-      int t = 0;
-      int i = 1;
-      double cCreditLim = 0;
-      Customer customer  = new Customer();
-      History history = new History();
-      PrintWriter outHist = null;
-
-      try {
-
-        now = new java.util.Date();
-
-        if (outputFiles == true)
-        {
-            out = new PrintWriter(new FileOutputStream(fileLocation + "customer.csv"));
-            System.out.println("Writing Customer file to: " + fileLocation + "customer.csv");
-            outHist = new PrintWriter(new FileOutputStream(fileLocation + "cust-hist.csv"));
-            System.out.println("Writing Customer History file to: " + fileLocation + "cust-hist.csv");
-        }
-
-        t = (whseKount * distWhseKount * custDistKount * 2);
-        System.out.println("Start Cust-Hist Load for " + t + " Cust-Hists @ " + now + " ...");
-
-        for (int w=1; w <= whseKount; w++) {
-
-          for (int d=1; d <= distWhseKount; d++) {
-
-            for (int c=1; c <= custDistKount; c++) {
-
-              sysdate = new java.sql.Timestamp(System.currentTimeMillis());
-
-              customer.c_id =  c;
-              customer.c_d_id = d;
-              customer.c_w_id =  w;
-
-              // discount is random between [0.0000 ... 0.5000]
-              customer.c_discount =
-                (float)(rnd.nextInt(1, 5000) / 10000.0);
-
-              if (rnd.nextInt(1, 100) <= 90) {
-                customer.c_credit =  "BC";   // 10% Bad Credit
-              } else {
-                customer.c_credit =  "GC";   // 90% Good Credit
-              }
-
-	      // the first 1000 customers have names corresponding to
-	      // DIGSYL(c_id - 1). This guarantees that the lookup by
-	      // c_last never fails. See 4.3.3.1.
-	      if (c <= 1000)
-		  customer.c_last = rnd.getCLast(c - 1);
-	      else
-		  customer.c_last =  rnd.getCLast();
-
-              customer.c_first = rnd.getAString(8, 16);
-              customer.c_middle =  "OE";
-              customer.c_credit_lim =  50000;
-
-              customer.c_balance =  -10;
-              customer.c_ytd_payment =  10;
-              customer.c_payment_cnt =  1;
-              customer.c_delivery_cnt =  0;
-
-              customer.c_street_1 = rnd.getAString(10, 20);
-              customer.c_street_2 = rnd.getAString(10, 20);
-              customer.c_city = rnd.getAString(10, 20);
-              customer.c_state = rnd.getState();
-              customer.c_zip = rnd.getNString(4, 4) + "11111";
-
-              customer.c_phone = rnd.getNString(16, 16);
-
-              customer.c_since =  sysdate.getTime();
-	      customer.c_data = rnd.getAString(300, 500);
-
-              history.hist_id = i;
-                i++;
-              history.h_c_id = c;
-              history.h_c_d_id = d;
-              history.h_c_w_id = w;
-              history.h_d_id = d;
-              history.h_w_id = w;
-              history.h_date = sysdate.getTime();
-              history.h_amount = 10;
-              history.h_data = rnd.getAString(10, 24);
-
-              k = k + 2;
-              if (outputFiles == false)
-              {
-                custPrepStmt.setLong(1, customer.c_id);
-                custPrepStmt.setLong(2, customer.c_d_id);
-                custPrepStmt.setLong(3, customer.c_w_id);
-                custPrepStmt.setDouble(4, customer.c_discount);
-                custPrepStmt.setString(5, customer.c_credit);
-                custPrepStmt.setString(6, customer.c_last);
-                custPrepStmt.setString(7, customer.c_first);
-                custPrepStmt.setDouble(8, customer.c_credit_lim);
-                custPrepStmt.setDouble(9, customer.c_balance);
-                custPrepStmt.setDouble(10, customer.c_ytd_payment);
-                custPrepStmt.setDouble(11, customer.c_payment_cnt);
-                custPrepStmt.setDouble(12, customer.c_delivery_cnt);
-                custPrepStmt.setString(13, customer.c_street_1);
-                custPrepStmt.setString(14, customer.c_street_2);
-                custPrepStmt.setString(15, customer.c_city);
-                custPrepStmt.setString(16, customer.c_state);
-                custPrepStmt.setString(17, customer.c_zip);
-                custPrepStmt.setString(18, customer.c_phone);
-
-                Timestamp since = new Timestamp(customer.c_since);
-                custPrepStmt.setTimestamp(19, since);
-                custPrepStmt.setString(20, customer.c_middle);
-                custPrepStmt.setString(21, customer.c_data);
-
-                custPrepStmt.addBatch();
-
-                histPrepStmt.setInt(1, history.hist_id);
-                histPrepStmt.setInt(2, history.h_c_id);
-                histPrepStmt.setInt(3, history.h_c_d_id);
-                histPrepStmt.setInt(4, history.h_c_w_id);
-
-                histPrepStmt.setInt(5, history.h_d_id);
-                histPrepStmt.setInt(6, history.h_w_id);
-                Timestamp hdate = new Timestamp(history.h_date);
-                histPrepStmt.setTimestamp(7, hdate);
-                histPrepStmt.setDouble(8, history.h_amount);
-                histPrepStmt.setString(9, history.h_data);
-
-                histPrepStmt.addBatch();
-
-
-              if (( k % configCommitCount) == 0) {
-                long tmpTime = new java.util.Date().getTime();
-                String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-                System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-                lastTimeMS = tmpTime;
-
-                custPrepStmt.executeBatch();
-                histPrepStmt.executeBatch();
-                custPrepStmt.clearBatch();
-                custPrepStmt.clearBatch();
-                transCommit();
-              }
-           } else {
-	          String str = "";
-              str = str + customer.c_id + ",";
-              str = str + customer.c_d_id + ",";
-              str = str + customer.c_w_id + ",";
-              str = str + customer.c_discount + ",";
-              str = str + customer.c_credit + ",";
-              str = str + customer.c_last + ",";
-              str = str + customer.c_first + ",";
-              str = str + customer.c_credit_lim + ",";
-              str = str + customer.c_balance + ",";
-              str = str + customer.c_ytd_payment + ",";
-              str = str + customer.c_payment_cnt + ",";
-              str = str + customer.c_delivery_cnt + ",";
-              str = str + customer.c_street_1 + ",";
-              str = str + customer.c_street_2 + ",";
-              str = str + customer.c_city + ",";
-              str = str + customer.c_state + ",";
-              str = str + customer.c_zip + ",";
-              str = str + customer.c_phone +",";
-              Timestamp since = new Timestamp(customer.c_since);
-              str = str + since + ",";
-              str = str + customer.c_middle + ",";
-              str = str + customer.c_data;
-              out.println(str);
-
-              str = "";
-              str = str + history.hist_id + ",";
-              str = str + history.h_c_id + ",";
-              str = str + history.h_c_d_id + ",";
-              str = str + history.h_c_w_id + ",";
-              str = str + history.h_d_id + ",";
-              str = str + history.h_w_id + ",";
-              Timestamp hdate = new Timestamp(history.h_date);
-              str = str + hdate + ",";
-              str = str + history.h_amount + ",";
-              str = str + history.h_data;
-              outHist.println(str);
-
-              if (( k % configCommitCount) == 0) {
-                long tmpTime = new java.util.Date().getTime();
-                String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-                System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-                lastTimeMS = tmpTime;
-
-		        }
-           }
-
-            } // end for [c]
-
-          } // end for [d]
-
-        } // end for [w]
-
-
-
-        long tmpTime = new java.util.Date().getTime();
-        String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-        System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-        lastTimeMS = tmpTime;
-        if (outputFiles == true) {
-          out.close();
-          outHist.close();
-	} else {
-          custPrepStmt.executeBatch();
-          histPrepStmt.executeBatch();
-          transCommit();
-        }
-
-        now = new java.util.Date();
-        System.out.println("End Cust-Hist Data Load @  " + now);
-
-      } catch(SQLException se) {
-        System.out.println(se.getMessage());
-        transRollback();
-        if (outputFiles == true) {
-          out.close();
-          outHist.close();
+	catch (IOException e)
+	{
+	    System.err.println("ERROR: " + e.getMessage());
+	    System.exit(1);
 	}
-      } catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-        if (outputFiles == true) {
-          out.close();
-          outHist.close();
+	argv = args;
+
+	/*
+	 * Initialize the global Random generator that picks the
+	 * C values for the load.
+	 */
+	rnd = new jTPCCRandom();
+
+	/*
+	 * Load the JDBC driver and prepare the db and dbProps.
+	 */
+	try {
+	    Class.forName(iniGetString("driver"));
 	}
-      }
+	catch (Exception e)
+	{
+	    System.err.println("ERROR: cannot load JDBC driver - " +
+			       e.getMessage());
+	    System.exit(1);
+	}
+	db = iniGetString("conn");
+	dbProps = new Properties();
+	dbProps.setProperty("user", iniGetString("user"));
+	dbProps.setProperty("password", iniGetString("password"));
 
-      return(k);
+	/*
+	 * Parse other vital information from the props file.
+	 */
+	numWarehouses   = iniGetInt("warehouses");
+	numWorkers      = iniGetInt("loadWorkers", 4);
+	fileLocation    = iniGetString("fileLocation");
+	csvNullValue    = iniGetString("csvNullValue", "NULL");
 
-  } // end loadCust()
+	/*
+	 * If CSV files are requested, open them all.
+	 */
+	if (fileLocation != null)
+	{
+	    writeCSV = true;
 
-
-
-  static int loadOrder(int whseKount, int distWhseKount, int custDistKount) {
-
-      int k     = 0;
-      int t     = 0;
-      PrintWriter outO = null;
-      PrintWriter outLine     = null;
-      PrintWriter outNewOrder = null;
-
-      try {
-
-        if (outputFiles == true)
-        {
-            outO = new PrintWriter(new FileOutputStream(fileLocation + "order.csv"));
-            System.out.println("Writing Order file to: " + fileLocation + "order.csv");
-            outLine = new PrintWriter(new FileOutputStream(fileLocation + "order-line.csv"));
-            System.out.println("Writing OrderLine file to: " + fileLocation + "order-line.csv");
-            outNewOrder = new PrintWriter(new FileOutputStream(fileLocation + "new-order.csv"));
-            System.out.println("Writing NewOrder file to: " + fileLocation + "new-order.csv");
-        }
-
-        now = new java.util.Date();
-        Oorder oorder  = new Oorder();
-        NewOrder new_order  = new NewOrder();
-        OrderLine order_line  = new OrderLine();
-        jdbcIO myJdbcIO = new jdbcIO();
-
-        t = (whseKount * distWhseKount * custDistKount);
-        t = (t * 11) + (t / 3);
-        System.out.println("whse=" + whseKount +", dist=" + distWhseKount +
-           ", cust=" + custDistKount);
-        System.out.println("Start Order-Line-New Load for approx " +
-           t  + " rows @ " + now + " ...");
-
-        for (int w=1; w <= whseKount; w++) {
-
-          for (int d=1; d <= distWhseKount; d++) {
-
-            for (int c=1; c <= custDistKount; c++) {
-
-              oorder.o_id = c;
-              oorder.o_w_id = w;
-              oorder.o_d_id = d;
-              oorder.o_c_id = rnd.nextInt(1, custDistKount);
-              oorder.o_carrier_id = rnd.nextInt(1, 10);
-              oorder.o_ol_cnt = rnd.nextInt(5, 15);
-              oorder.o_all_local = 1;
-              oorder.o_entry_d = System.currentTimeMillis();
-
-              k++;
-              if (outputFiles == false)
-              {
-                myJdbcIO.insertOrder(ordrPrepStmt, oorder);
-    	      } else {
-    			String str = "";
-                str = str + oorder.o_id + ",";
-                str = str + oorder.o_w_id + ",";
-                str = str + oorder.o_d_id + ",";
-                str = str + oorder.o_c_id + ",";
-                str = str + oorder.o_carrier_id + ",";
-                str = str + oorder.o_ol_cnt + ",";
-                str = str + oorder.o_all_local + ",";
-                Timestamp entry_d = new java.sql.Timestamp(oorder.o_entry_d);
-                str = str + entry_d;
-                outO.println(str);
-              }
-
-              // 900 rows in the NEW-ORDER table corresponding to the last
-              // 900 rows in the ORDER table for that district (i.e., with
-              // NO_O_ID between 2,101 and 3,000)
-
-              if (c > 2100 ) {
-
-                new_order.no_w_id =  w;
-                new_order.no_d_id = d;
-                new_order.no_o_id = c;
-
-                k++;
-                if (outputFiles == false)
-                {
-                  myJdbcIO.insertNewOrder(nworPrepStmt, new_order);
-                } else {
-                  String str = "";
-                  str = str + new_order.no_w_id+ ",";
-                  str = str + new_order.no_d_id+ ",";
-                  str = str + new_order.no_o_id;
-                  outNewOrder.println(str);
-                }
-
-
-              } // end new order
-
-              for (int l=1; l <= oorder.o_ol_cnt; l++) {
-
-                order_line.ol_w_id = w;
-                order_line.ol_d_id = d;
-                order_line.ol_o_id = c;
-                order_line.ol_number =  l;   // ol_number
-                order_line.ol_i_id = rnd.nextInt(1, 100000);
-                order_line.ol_delivery_d =  oorder.o_entry_d;
-
-                if (order_line.ol_o_id < 2101) {
-                  order_line.ol_amount = 0;
-                } else {
-                  // random within [0.01 .. 9,999.99]
-                  order_line.ol_amount =
-                    (float)(rnd.nextLong(1, 999999) / 100.0);
-                }
-
-                order_line.ol_supply_w_id =  rnd.nextInt(1, numWarehouses);
-                order_line.ol_quantity =  5;
-                order_line.ol_dist_info =  jTPCCUtil.randomStr(24);
-
-                k++;
-                if (outputFiles == false)
-                {
-                  myJdbcIO.insertOrderLine(orlnPrepStmt, order_line);
-                } else {
-                  String str = "";
-                  str = str + order_line.ol_w_id + ",";
-                  str = str + order_line.ol_d_id + ",";
-                  str = str + order_line.ol_o_id + ",";
-                  str = str + order_line.ol_number + ",";
-                  str = str + order_line.ol_i_id + ",";
-                  Timestamp delivery_d = new Timestamp(order_line.ol_delivery_d);
-                  str = str + delivery_d + ",";
-                  str = str + order_line.ol_amount + ",";
-                  str = str + order_line.ol_supply_w_id + ",";
-                  str = str + order_line.ol_quantity + ",";
-                  str = str + order_line.ol_dist_info;
-                  outLine.println(str);
-                }
-
-                if (( k % configCommitCount) == 0) {
-                  long tmpTime = new java.util.Date().getTime();
-                  String etStr = "  Elasped Time(ms): " + ((tmpTime - lastTimeMS)/1000.000) + "                    ";
-                  System.out.println(etStr.substring(0, 30) + "  Writing record " + k + " of " + t);
-                  lastTimeMS = tmpTime;
-                  if (outputFiles == false)
-                  {
-                    ordrPrepStmt.executeBatch();
-                    nworPrepStmt.executeBatch();
-                    orlnPrepStmt.executeBatch();
-                    ordrPrepStmt.clearBatch();
-                    nworPrepStmt.clearBatch();
-                    orlnPrepStmt.clearBatch();
-                    transCommit();
-				  }
-                }
-
-              } // end for [l]
-
-            } // end for [c]
-
-          } // end for [d]
-
-        } // end for [w]
-
-
-        System.out.println("  Writing final records " + k + " of " + t);
-
-        if (outputFiles == true)
-        {
-            outO.close();
-            outLine.close();
-            outNewOrder.close();
-        } else {
-                ordrPrepStmt.executeBatch();
-                nworPrepStmt.executeBatch();
-                orlnPrepStmt.executeBatch();
-                transCommit();
-		}
-        now = new java.util.Date();
-        System.out.println("End Orders Load @  " + now);
-
-      }
-      catch(SQLException se) {
-      System.out.println(se.getMessage());
-      transRollback();
-      if (outputFiles == true) {
-          outO.close();
-          outLine.close();
-          outNewOrder.close();
-      }
-      }
-      catch(Exception e) {
-        e.printStackTrace();
-        transRollback();
-        if (outputFiles == true)
-        {
-          outO.close();
-          outLine.close();
-          outNewOrder.close();
+	    try
+	    {
+		configCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "config.csv"));
+		itemCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "item.csv"));
+		warehouseCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "warehouse.csv"));
+		districtCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "district.csv"));
+		stockCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "stock.csv"));
+		customerCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "customer.csv"));
+		historyCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "cust-hist.csv"));
+		orderCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "order.csv"));
+		orderLineCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "order-line.csv"));
+		newOrderCSV = new BufferedWriter(new FileWriter(fileLocation +
+							      "new-order.csv"));
 	    }
-      }
+	    catch (IOException ie)
+	    {
+		System.err.println(ie.getMessage());
+		System.exit(3);
+	    }
+	}
 
-      return(k);
+	System.out.println("");
 
-  } // end loadOrder()
+	/*
+	 * Create the number of requested workers and start them.
+	 */
+	workers = new LoadDataWorker[numWorkers];
+	workerThreads = new Thread[numWorkers];
+	for (i = 0; i < numWorkers; i++)
+	{
+	    Connection dbConn;
 
-} // end LoadData Class
+	    try
+	    {
+		dbConn = DriverManager.getConnection(db, dbProps);
+		dbConn.setAutoCommit(false);
+		if (writeCSV)
+		    workers[i] = new LoadDataWorker(i, csvNullValue,
+							rnd.newRandom());
+		else
+		    workers[i] = new LoadDataWorker(i, dbConn,
+							rnd.newRandom());
+		workerThreads[i] = new Thread(workers[i]);
+		workerThreads[i].start();
+	    }
+	    catch (SQLException se)
+	    {
+		System.err.println("ERROR: " + se.getMessage());
+		System.exit(3);
+		return;
+	    }
+
+	}
+
+	for (i = 0; i < numWorkers; i++)
+	{
+	    try {
+		workerThreads[i].join();
+	    }
+	    catch (InterruptedException ie)
+	    {
+		System.err.println("ERROR: worker " + i + " - " +
+				   ie.getMessage());
+		System.exit(4);
+	    }
+	}
+
+	/*
+	 * Close the CSV files if we are writing them.
+	 */
+	if (writeCSV)
+	{
+	    try
+	    {
+		configCSV.close();
+		itemCSV.close();
+		warehouseCSV.close();
+		districtCSV.close();
+		stockCSV.close();
+		customerCSV.close();
+		historyCSV.close();
+		orderCSV.close();
+		orderLineCSV.close();
+		newOrderCSV.close();
+	    }
+	    catch (IOException ie)
+	    {
+		System.err.println(ie.getMessage());
+		System.exit(3);
+	    }
+	}
+    } // End of main()
+
+    public static void configAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(configCSV)
+	{
+	    configCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void itemAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(itemCSV)
+	{
+	    itemCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void warehouseAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(warehouseCSV)
+	{
+	    warehouseCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void districtAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(districtCSV)
+	{
+	    districtCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void stockAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(stockCSV)
+	{
+	    stockCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void customerAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(customerCSV)
+	{
+	    customerCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void historyAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(historyCSV)
+	{
+	    historyCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void orderAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(orderCSV)
+	{
+	    orderCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void orderLineAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(orderLineCSV)
+	{
+	    orderLineCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static void newOrderAppend(StringBuffer buf)
+	throws IOException
+    {
+	synchronized(newOrderCSV)
+	{
+	    newOrderCSV.write(buf.toString());
+	}
+	buf.setLength(0);
+    }
+
+    public static int getNextJob()
+    {
+	int     job;
+
+	synchronized(nextJobLock)
+	{
+	    if (nextJob > numWarehouses)
+		job = -1;
+	    else
+		job = nextJob++;
+	}
+
+	return job;
+    }
+
+    public static int getNumWarehouses()
+    {
+	return numWarehouses;
+    }
+
+    private static String iniGetString(String name)
+    {
+	String  strVal = null;
+
+	for (int i = 0; i < argv.length - 1; i += 2)
+	{
+	    if (name.toLowerCase().equals(argv[i].toLowerCase()))
+	    {
+		strVal = argv[i + 1];
+		break;
+	    }
+	}
+
+	if (strVal == null)
+	    strVal = ini.getProperty(name);
+
+	if (strVal == null)
+	    System.out.println(name + " (not defined)");
+	else
+	    if (name.equals("password"))
+		System.out.println(name + "=***********");
+	    else
+		System.out.println(name + "=" + strVal);
+	return strVal;
+    }
+
+    private static String iniGetString(String name, String defVal)
+    {
+	String  strVal = null;
+
+	for (int i = 0; i < argv.length - 1; i += 2)
+	{
+	    if (name.toLowerCase().equals(argv[i].toLowerCase()))
+	    {
+		strVal = argv[i + 1];
+		break;
+	    }
+	}
+
+	if (strVal == null)
+	    strVal = ini.getProperty(name);
+
+	if (strVal == null)
+	{
+	    System.out.println(name + " (not defined - using default '" +
+			       defVal + "')");
+	    return defVal;
+	}
+	else
+	    if (name.equals("password"))
+		System.out.println(name + "=***********");
+	    else
+		System.out.println(name + "=" + strVal);
+	return strVal;
+    }
+
+    private static int iniGetInt(String name)
+    {
+	String  strVal = iniGetString(name);
+
+	if (strVal == null)
+	    return 0;
+	return Integer.parseInt(strVal);
+    }
+
+    private static int iniGetInt(String name, int defVal)
+    {
+	String  strVal = iniGetString(name);
+
+	if (strVal == null)
+	    return defVal;
+	return Integer.parseInt(strVal);
+    }
+}

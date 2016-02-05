@@ -6,6 +6,7 @@ if [ $# -ne 1 ] ; then
 fi
 
 PROPS="$1"
+shift
 if [ ! -f "${PROPS}" ] ; then
     echo "${PROPS}: no such file or directory" >&2
     exit 1
@@ -19,7 +20,7 @@ for step in ${BEFORE_LOAD} ; do
     ./runSQL.sh "${PROPS}" $step
 done
 
-./runLoader.sh "${PROPS}"
+./runLoader.sh "${PROPS}" $*
 
 for step in ${AFTER_LOAD} ; do
     ./runSQL.sh "${PROPS}" $step

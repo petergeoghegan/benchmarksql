@@ -24,7 +24,6 @@ public class jTPCC implements jTPCCConfig
     private jTPCCTerminal[] terminals;
     private String[] terminalNames;
     private boolean terminalsBlockingExit = false;
-    private Random random;
     private long terminalsStarted = 0, sessionCount = 0, transactionCount;
 
     private long newOrderCounter, sessionStartTimestamp, sessionEndTimestamp, sessionNextTimestamp=0, sessionNextKounter=0;
@@ -124,9 +123,6 @@ public class jTPCC implements jTPCCConfig
 
 
         boolean iRunMinsBool=false;
-
-
-        this.random = new Random(System.currentTimeMillis());
 
         try
         {
@@ -334,8 +330,8 @@ public class jTPCC implements jTPCCConfig
                         int terminalDistrictID;
                         do
                         {
-                            terminalWarehouseID = (int)randomNumber(1, numWarehouses);
-                            terminalDistrictID = (int)randomNumber(1, 10);
+                            terminalWarehouseID = rnd.nextInt(1, numWarehouses);
+                            terminalDistrictID = rnd.nextInt(1, 10);
                         }
                         while(usedTerminals[terminalWarehouseID-1][terminalDistrictID-1] == 1);
                         usedTerminals[terminalWarehouseID-1][terminalDistrictID-1] = 1;
@@ -515,11 +511,6 @@ public class jTPCC implements jTPCCConfig
     private void exit()
     {
         System.exit(0);
-    }
-
-    private long randomNumber(long min, long max)
-    {
-        return (long)(random.nextDouble() * (max-min+1) + min);
     }
 
     private String getCurrentTime()

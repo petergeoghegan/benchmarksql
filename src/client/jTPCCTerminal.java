@@ -906,49 +906,25 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
             rs.close();
             rs = null;
 
-            newOrderRowInserted = false;
-            while(!newOrderRowInserted)
-            {
+	    if (stmtGetDist == null) {
+	      stmtGetDist = conn.prepareStatement(
+		"SELECT d_next_o_id, d_tax FROM bmsql_district" +
+		" WHERE d_id = ? AND d_w_id = ? FOR UPDATE");
+	    }
 
-                if (stmtGetDist == null) {
-                  stmtGetDist = conn.prepareStatement(
-                    "SELECT d_next_o_id, d_tax FROM bmsql_district" +
-                    " WHERE d_id = ? AND d_w_id = ? FOR UPDATE");
-                }
+	    stmtGetDist.setInt(1, d_id);
+	    stmtGetDist.setInt(2, w_id);
 
-                stmtGetDist.setInt(1, d_id);
-                stmtGetDist.setInt(2, w_id);
+	    rs = stmtGetDist.executeQuery();
+	    if (!rs.next()) {
+	      log.error("stmtGetDist() not found! " + "D_ID=" + d_id + " D_W_ID=" + w_id);
+	    }
 
-                rs = stmtGetDist.executeQuery();
-                if (!rs.next()) {
-                  log.error("stmtGetDist() not found! " + "D_ID=" + d_id + " D_W_ID=" + w_id);
-                }
-
-                d_next_o_id = rs.getInt("d_next_o_id");
-                d_tax = rs.getFloat("d_tax");
-                rs.close();
-                rs = null;
-                o_id = d_next_o_id;
-
-                try
-                {
-                    if (stmtInsertNewOrder == null) {
-                      stmtInsertNewOrder = conn.prepareStatement(
-                        "INSERT INTO bmsql_new_order (no_o_id, no_d_id, no_w_id) " +
-                        "VALUES ( ?, ?, ?)");
-                    }
-
-                    stmtInsertNewOrder.setInt(1, o_id);
-                    stmtInsertNewOrder.setInt(2, d_id);
-                    stmtInsertNewOrder.setInt(3, w_id);
-                    stmtInsertNewOrder.executeUpdate();
-                    newOrderRowInserted = true;
-                }
-                catch(SQLException e2)
-                {
-                    printMessage("The row was already on table new_order. Restarting...");
-                }
-            }
+	    d_next_o_id = rs.getInt("d_next_o_id");
+	    d_tax = rs.getFloat("d_tax");
+	    rs.close();
+	    rs = null;
+	    o_id = d_next_o_id;
 
 
             if (stmtUpdateDist == null) {
@@ -1113,6 +1089,18 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
             stmtInsertOrderLine.executeBatch();
             stmtUpdateStock.executeBatch();
+
+	    if (stmtInsertNewOrder == null) {
+	      stmtInsertNewOrder = conn.prepareStatement(
+		"INSERT INTO bmsql_new_order (no_o_id, no_d_id, no_w_id) " +
+		"VALUES ( ?, ?, ?)");
+	    }
+
+	    stmtInsertNewOrder.setInt(1, o_id);
+	    stmtInsertNewOrder.setInt(2, d_id);
+	    stmtInsertNewOrder.setInt(3, w_id);
+	    stmtInsertNewOrder.executeUpdate();
+
             transCommit();
             stmtInsertOrderLine.clearBatch();
             stmtUpdateStock.clearBatch();

@@ -45,9 +45,9 @@ public class jTPCCRandom
 	    throw new IllegalStateException("Global instance exists");
 
     	this.random = new Random(System.nanoTime());
-	this.nURandCLast = nextLong(0, 255);
-	this.nURandCC_ID = nextLong(0, 1023);
-	this.nURandCI_ID = nextLong(0, 8191);
+	jTPCCRandom.nURandCLast = nextLong(0, 255);
+	jTPCCRandom.nURandCC_ID = nextLong(0, 1023);
+	jTPCCRandom.nURandCI_ID = nextLong(0, 8191);
 
 	initialized = true;
     }
@@ -72,14 +72,14 @@ public class jTPCCRandom
 	    throw new IllegalStateException("Global instance exists");
 
     	this.random = new Random(System.nanoTime());
-	this.nURandCC_ID = nextLong(0, 1023);
-	this.nURandCI_ID = nextLong(0, 8191);
+	jTPCCRandom.nURandCC_ID = nextLong(0, 1023);
+	jTPCCRandom.nURandCI_ID = nextLong(0, 8191);
 
 	do
 	{
-	    this.nURandCLast = nextLong(0, 255);
+	    jTPCCRandom.nURandCLast = nextLong(0, 255);
 
-	    delta = Math.abs(this.nURandCLast - CLoad);
+	    delta = Math.abs(jTPCCRandom.nURandCLast - CLoad);
 	    if (delta == 96 || delta == 112)
 	    	continue;
 	    if (delta < 65 || delta > 119)

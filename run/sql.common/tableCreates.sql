@@ -109,7 +109,7 @@ create table bmsql_stock (
   s_w_id       integer       not null,
   s_i_id       integer       not null,
   s_quantity   integer,
-  s_ytd        decimal(8,2),
+  s_ytd        integer,
   s_order_cnt  integer,
   s_remote_cnt integer,
   s_data       varchar(50),

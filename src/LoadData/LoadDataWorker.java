@@ -419,12 +419,12 @@ public class LoadDataWorker implements Runnable
 
 	    if (writeCSV)
 	    {
-		fmtStock.format("%d,%d,%d,%.2f,%d,%d,%s," +
+		fmtStock.format("%d,%d,%d,%d,%d,%d,%s," +
 				"%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
 				s_i_id,
 				w_id,
 				rnd.nextInt(10, 100),
-				0.0,
+				0,
 				0,
 				0,
 				sData,
@@ -454,7 +454,7 @@ public class LoadDataWorker implements Runnable
 		stmtStock.setString(11, rnd.getAString(24, 24));
 		stmtStock.setString(12, rnd.getAString(24, 24));
 		stmtStock.setString(13, rnd.getAString(24, 24));
-		stmtStock.setDouble(14, 0.0);
+		stmtStock.setInt(14, 0);
 		stmtStock.setInt(15, 0);
 		stmtStock.setInt(16, 0);
 		stmtStock.setString(17, sData);
@@ -689,7 +689,7 @@ public class LoadDataWorker implements Runnable
 			    ol_number,
 			    rnd.nextInt(1, 100000),
 			    (o_id < 2101) ? new java.sql.Timestamp(now).toString() : csvNull,
-			    (o_id < 2101) ? 0.00 : ((long)rnd.nextLong(1, 999999)) / 100.0,
+			    (o_id < 2101) ? 0.00 : ((double)rnd.nextLong(1, 999999)) / 100.0,
 			    w_id,
 			    5,
 			    rnd.getAString(24, 24));
@@ -710,7 +710,7 @@ public class LoadDataWorker implements Runnable
 			if (o_id < 2101)
 			    stmtOrderLine.setDouble(9, 0.00);
 			else
-			    stmtOrderLine.setDouble(9, ((long)rnd.nextLong(1, 999999)) / 100.0);
+			    stmtOrderLine.setDouble(9, ((double)rnd.nextLong(1, 999999)) / 100.0);
 			stmtOrderLine.setString(10, rnd.getAString(24, 24));
 
 			stmtOrderLine.addBatch();

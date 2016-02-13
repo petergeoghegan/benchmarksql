@@ -10,9 +10,18 @@ Version 5.0.0 TBD lussman & jannicash:
   +  Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1102 driver
   +  Improve support for Oracle
   +  Add support for MySQL & SQLServer/Sybase
+  +  Re-implement the non-uniform random generator in TPC-C style.
   +  Conform to clause 4.3.3.1 and enable lookup by last name
-  +  Added a switch to disable terminal-warehouse association, spreading
+  +  Add a switch to disable terminal-warehouse association, spreading
      the data access over all configured warehouses.
+  +  Re-worked the run shell scripts and the location of SQL files to
+     make support of more database types easier.
+  +  Add support for Firebird (http://www.firebirdsql.org).
+  +  Add FOREIGN KEYS as defined by TPC-C 1.3.
+  +  Major code overhaul. The per transaction type terminal data
+     generation, execution and terminal trace code is moved into a
+     module jTPCCTData. The database connection with all prepared
+     statements has moved into a module jTPCCConnection.
 
 Version 4.1.2 TBD jannicash:
 -----------------------------------

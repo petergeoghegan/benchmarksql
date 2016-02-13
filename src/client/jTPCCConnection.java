@@ -63,7 +63,7 @@ public class jTPCCConnection
 		"    FROM bmsql_customer " +
 		"    JOIN bmsql_warehouse ON (w_id = c_w_id) " +
 		"    WHERE c_w_id = ? AND c_d_id = ? AND c_id = ?");
-    	stmtNewOrderSelectDist = dbConn.prepareStatement(
+	stmtNewOrderSelectDist = dbConn.prepareStatement(
 		"SELECT d_tax, d_next_o_id " +
 		"    FROM bmsql_district " +
 		"    WHERE d_w_id = ? AND d_id = ? " +
@@ -187,39 +187,41 @@ public class jTPCCConnection
 		"    ORDER BY ol_w_id, ol_d_id, ol_o_id, ol_number");
 
     	// PreparedStatements for STOCK_LEVEL
-	if (dbType == jTPCCConfig.DB_POSTGRES)
+	switch (dbType)
 	{
-	    stmtStockLevelSelectLow = dbConn.prepareStatement(
-		"SELECT count(*) AS low_stock FROM (" +
-		"    SELECT s_w_id, s_i_id, s_quantity " +
-		"        FROM bmsql_stock " +
-		"        WHERE s_w_id = ? AND s_quantity < ? AND s_i_id IN (" +
-		"            SELECT ol_i_id " +
-		"                FROM bmsql_district " +
-		"                JOIN bmsql_order_line ON ol_w_id = d_w_id " +
-		"                 AND ol_d_id = d_id " +
-		"                 AND ol_o_id >= d_next_o_id - 20 " +
-		"                 AND ol_o_id < d_next_o_id " +
-		"                WHERE d_w_id = ? AND d_id = ? " +
-		"        ) " +
-		"    ) AS L");
-	}
-	else
-	{
-	    stmtStockLevelSelectLow = dbConn.prepareStatement(
-		"SELECT count(*) AS low_stock FROM (" +
-		"    SELECT s_w_id, s_i_id, s_quantity " +
-		"        FROM bmsql_stock " +
-		"        WHERE s_w_id = ? AND s_quantity < ? AND s_i_id IN (" +
-		"            SELECT ol_i_id " +
-		"                FROM bmsql_district " +
-		"                JOIN bmsql_order_line ON ol_w_id = d_w_id " +
-		"                 AND ol_d_id = d_id " +
-		"                 AND ol_o_id >= d_next_o_id - 20 " +
-		"                 AND ol_o_id < d_next_o_id " +
-		"                WHERE d_w_id = ? AND d_id = ? " +
-		"        ) " +
-		"    )");
+	    case jTPCCConfig.DB_POSTGRES:
+		stmtStockLevelSelectLow = dbConn.prepareStatement(
+		    "SELECT count(*) AS low_stock FROM (" +
+		    "    SELECT s_w_id, s_i_id, s_quantity " +
+		    "        FROM bmsql_stock " +
+		    "        WHERE s_w_id = ? AND s_quantity < ? AND s_i_id IN (" +
+		    "            SELECT ol_i_id " +
+		    "                FROM bmsql_district " +
+		    "                JOIN bmsql_order_line ON ol_w_id = d_w_id " +
+		    "                 AND ol_d_id = d_id " +
+		    "                 AND ol_o_id >= d_next_o_id - 20 " +
+		    "                 AND ol_o_id < d_next_o_id " +
+		    "                WHERE d_w_id = ? AND d_id = ? " +
+		    "        ) " +
+		    "    ) AS L");
+		break;
+
+	    default:
+		stmtStockLevelSelectLow = dbConn.prepareStatement(
+		    "SELECT count(*) AS low_stock FROM (" +
+		    "    SELECT s_w_id, s_i_id, s_quantity " +
+		    "        FROM bmsql_stock " +
+		    "        WHERE s_w_id = ? AND s_quantity < ? AND s_i_id IN (" +
+		    "            SELECT ol_i_id " +
+		    "                FROM bmsql_district " +
+		    "                JOIN bmsql_order_line ON ol_w_id = d_w_id " +
+		    "                 AND ol_d_id = d_id " +
+		    "                 AND ol_o_id >= d_next_o_id - 20 " +
+		    "                 AND ol_o_id < d_next_o_id " +
+		    "                WHERE d_w_id = ? AND d_id = ? " +
+		    "        ) " +
+		    "    )");
+		break;
 	}
 
     	// PreparedStatements for DELIVERY_BG

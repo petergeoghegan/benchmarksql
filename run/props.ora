@@ -26,3 +26,7 @@ orderStatusWeight=4
 deliveryWeight=4
 stockLevelWeight=4
 
+// Directory name to create for collecting detailed result data.
+// Comment this out to suppress.
+resultDirectory=my_result_%tY-%tm-%td_%tH%tM%tS
+

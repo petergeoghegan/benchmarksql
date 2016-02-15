@@ -23,15 +23,15 @@ public class jTPCCRandom
 	    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     private static final String[] cLastTokens = {
-    	    "BAR", "OUGHT", "ABLE", "PRI", "PRES",
+	    "BAR", "OUGHT", "ABLE", "PRI", "PRES",
 	    "ESE", "ANTI", "CALLY", "ATION", "EING"};
 
-    private static long		nURandCLast;
-    private static long		nURandCC_ID;
-    private static long		nURandCI_ID;
-    private static boolean	initialized = false;
+    private static long         nURandCLast;
+    private static long         nURandCC_ID;
+    private static long         nURandCI_ID;
+    private static boolean      initialized = false;
 
-    private	Random	random;
+    private     Random  random;
 
     /*
      * jTPCCRandom()
@@ -41,10 +41,10 @@ public class jTPCCRandom
      */
     jTPCCRandom()
     {
-    	if (initialized)
+	if (initialized)
 	    throw new IllegalStateException("Global instance exists");
 
-    	this.random = new Random(System.nanoTime());
+	this.random = new Random(System.nanoTime());
 	jTPCCRandom.nURandCLast = nextLong(0, 255);
 	jTPCCRandom.nURandCC_ID = nextLong(0, 1023);
 	jTPCCRandom.nURandCI_ID = nextLong(0, 8191);
@@ -56,22 +56,22 @@ public class jTPCCRandom
      * jTPCCRandom(CLoad)
      *
      *     Used to create the master jTPCCRandom instance for running
-     *     a benchmark load. 
+     *     a benchmark load.
      *
      *     TPC-C 2.1.6 defines the rules for picking the C values of
-     *     the non-uniform random number generator. In particular 
+     *     the non-uniform random number generator. In particular
      *     2.1.6.1 defines what numbers for the C value for generating
      *     C_LAST must be excluded from the possible range during run
      *     time, based on the number used during the load.
      */
     jTPCCRandom(long CLoad)
     {
-    	long delta;
+	long delta;
 
-    	if (initialized)
+	if (initialized)
 	    throw new IllegalStateException("Global instance exists");
 
-    	this.random = new Random(System.nanoTime());
+	this.random = new Random(System.nanoTime());
 	jTPCCRandom.nURandCC_ID = nextLong(0, 1023);
 	jTPCCRandom.nURandCI_ID = nextLong(0, 8191);
 
@@ -81,9 +81,9 @@ public class jTPCCRandom
 
 	    delta = Math.abs(jTPCCRandom.nURandCLast - CLoad);
 	    if (delta == 96 || delta == 112)
-	    	continue;
+		continue;
 	    if (delta < 65 || delta > 119)
-	    	continue;
+		continue;
 	    break;
 	} while(true);
 
@@ -92,7 +92,7 @@ public class jTPCCRandom
 
     private jTPCCRandom(jTPCCRandom parent)
     {
-    	this.random = new Random(System.nanoTime());
+	this.random = new Random(System.nanoTime());
     }
 
     /*
@@ -147,7 +147,7 @@ public class jTPCCRandom
      */
     public String getAString(long x, long y)
     {
-    	String result = new String();
+	String result = new String();
 	long len = nextLong(x, y);
 	long have = 1;
 
@@ -161,7 +161,7 @@ public class jTPCCRandom
 	    have++;
 	}
 
-    	return result;
+	return result;
     }
 
     /*
@@ -202,7 +202,7 @@ public class jTPCCRandom
      */
     public int getCustomerID()
     {
-	return (int)((((nextLong(0, 1023) | nextLong(1, 3000)) + nURandCC_ID) 
+	return (int)((((nextLong(0, 1023) | nextLong(1, 3000)) + nURandCC_ID)
 	       % 3000) + 1);
     }
 
@@ -213,9 +213,9 @@ public class jTPCCRandom
      */
     public String getCLast(int num)
     {
-    	String result = new String();
+	String result = new String();
 
-    	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 	{
 	    result = cLastTokens[num % 10] + result;
 	    num /= 10;
@@ -233,12 +233,12 @@ public class jTPCCRandom
     {
 	long num;
 	num = (((nextLong(0, 255) | nextLong(0, 999)) + nURandCLast) % 1000);
-    	return getCLast((int)num);
+	return getCLast((int)num);
     }
 
     public String getState()
     {
-    	String result = new String();
+	String result = new String();
 
 	result += (char)nextInt((int)'A', (int)'Z');
 	result += (char)nextInt((int)'A', (int)'Z');
@@ -251,16 +251,16 @@ public class jTPCCRandom
      */
     public long getNURandCLast()
     {
-    	return nURandCLast;
+	return nURandCLast;
     }
 
     public long getNURandCC_ID()
     {
-    	return nURandCC_ID;
+	return nURandCC_ID;
     }
 
     public long getNURandCI_ID()
     {
-    	return nURandCI_ID;
+	return nURandCI_ID;
     }
 } // end jTPCCRandom

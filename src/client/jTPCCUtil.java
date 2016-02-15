@@ -3,7 +3,8 @@
  *    the TPC-C benchmark
  *
  * Copyright (C) 2003, Raul Barbosa
- * Copyright (C) 2004-2014, Denis Lussier
+ * Copyright (C) 2004-2016, Denis Lussier
+ * Copyright (C) 2016, Jan Wieck
  *
  */
 
@@ -15,8 +16,8 @@ import java.text.*;
 
 public class jTPCCUtil implements jTPCCConfig
 {
-  private static Connection		dbConn = null;
-  private static PreparedStatement	stmtGetConfig = null;
+  private static Connection             dbConn = null;
+  private static PreparedStatement      stmtGetConfig = null;
 
   public static String getSysProp(String inSysProperty, String defaultValue) {
 
@@ -43,7 +44,7 @@ public class jTPCCUtil implements jTPCCConfig
 
       freshChar= (char)(Math.random()*128);
       if(Character.isLetter(freshChar)){
-        freshString += freshChar;
+	freshString += freshChar;
       }
     }
 
@@ -54,7 +55,7 @@ public class jTPCCUtil implements jTPCCConfig
 
     public static String getCurrentTime()
     {
-        return dateFormat.format(new java.util.Date());
+	return dateFormat.format(new java.util.Date());
     }
 
     public static String formattedDouble(double d)
@@ -67,7 +68,7 @@ public class jTPCCUtil implements jTPCCConfig
 	throws Exception
     {
 	ResultSet   rs;
-	String	    value;
+	String      value;
 
 	if (dbConn == null)
 	{

@@ -2,7 +2,8 @@
  * jTPCCTerminal - Terminal emulator code for jTPCC (transactions)
  *
  * Copyright (C) 2003, Raul Barbosa
- * Copyright (C) 2004-2014, Denis Lussier
+ * Copyright (C) 2004-2016, Denis Lussier
+ * Copyright (C) 2016, Jan Wieck
  *
  */
 import org.apache.log4j.*;
@@ -41,100 +42,100 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
     long terminalStartTime = 0;
     long transactionEnd = 0;
 
-    jTPCCConnection	db = null;
-    int			dbType = 0;
+    jTPCCConnection     db = null;
+    int                 dbType = 0;
 
     public jTPCCTerminal
       (String terminalName, int terminalWarehouseID, int terminalDistrictID,
        Connection conn, int dbType,
        int numTransactions, boolean terminalWarehouseFixed,
-       int paymentWeight, int orderStatusWeight, 
+       int paymentWeight, int orderStatusWeight,
        int deliveryWeight, int stockLevelWeight, int numWarehouses, int limPerMin_Terminal, jTPCC parent) throws SQLException
     {
-        this.terminalName = terminalName;
-        this.conn = conn;
+	this.terminalName = terminalName;
+	this.conn = conn;
 	this.dbType = dbType;
-        this.stmt = conn.createStatement();
-        this.stmt.setMaxRows(200);
-        this.stmt.setFetchSize(100);
+	this.stmt = conn.createStatement();
+	this.stmt.setMaxRows(200);
+	this.stmt.setFetchSize(100);
 
-        this.stmt1 = conn.createStatement();
-        this.stmt1.setMaxRows(1);
+	this.stmt1 = conn.createStatement();
+	this.stmt1.setMaxRows(1);
 
-        this.terminalWarehouseID = terminalWarehouseID;
-        this.terminalDistrictID = terminalDistrictID;
+	this.terminalWarehouseID = terminalWarehouseID;
+	this.terminalDistrictID = terminalDistrictID;
 	this.terminalWarehouseFixed = terminalWarehouseFixed;
-        this.parent = parent;
+	this.parent = parent;
 	this.rnd = parent.getRnd().newRandom();
-        this.numTransactions = numTransactions;
-        this.paymentWeight = paymentWeight;
-        this.orderStatusWeight = orderStatusWeight;
-        this.deliveryWeight = deliveryWeight;
-        this.stockLevelWeight = stockLevelWeight;
-        this.numWarehouses = numWarehouses;
-        this.newOrderCounter = 0;
-        this.limPerMin_Terminal = limPerMin_Terminal;
+	this.numTransactions = numTransactions;
+	this.paymentWeight = paymentWeight;
+	this.orderStatusWeight = orderStatusWeight;
+	this.deliveryWeight = deliveryWeight;
+	this.stockLevelWeight = stockLevelWeight;
+	this.numWarehouses = numWarehouses;
+	this.newOrderCounter = 0;
+	this.limPerMin_Terminal = limPerMin_Terminal;
 
 	this.db = new jTPCCConnection(conn, dbType);
 
-        terminalMessage("");
-        terminalMessage("Terminal \'" + terminalName + "\' has WarehouseID=" + terminalWarehouseID + " and DistrictID=" + terminalDistrictID + ".");
-        terminalStartTime = System.currentTimeMillis();
+	terminalMessage("");
+	terminalMessage("Terminal \'" + terminalName + "\' has WarehouseID=" + terminalWarehouseID + " and DistrictID=" + terminalDistrictID + ".");
+	terminalStartTime = System.currentTimeMillis();
     }
 
     public void run()
     {
-        executeTransactions(numTransactions);
-        try
-        {
-            printMessage("");
-            printMessage("Closing statement and connection...");
+	executeTransactions(numTransactions);
+	try
+	{
+	    printMessage("");
+	    printMessage("Closing statement and connection...");
 
-            stmt.close();
-            conn.close();
-        }
-        catch(Exception e)
-        {
-            printMessage("");
-            printMessage("An error occurred!");
-            logException(e);
-        }
+	    stmt.close();
+	    conn.close();
+	}
+	catch(Exception e)
+	{
+	    printMessage("");
+	    printMessage("An error occurred!");
+	    logException(e);
+	}
 
-        printMessage("");
-        printMessage("Terminal \'" + terminalName + "\' finished after " + (transactionCount-1) + " transaction(s).");
+	printMessage("");
+	printMessage("Terminal \'" + terminalName + "\' finished after " + (transactionCount-1) + " transaction(s).");
 
-        parent.signalTerminalEnded(this, newOrderCounter);
+	parent.signalTerminalEnded(this, newOrderCounter);
     }
 
     public void stopRunningWhenPossible()
     {
-        stopRunningSignal = true;
-        printMessage("");
-        printMessage("Terminal received stop signal!");
-        printMessage("Finishing current transaction before exit...");
+	stopRunningSignal = true;
+	printMessage("");
+	printMessage("Terminal received stop signal!");
+	printMessage("Finishing current transaction before exit...");
     }
 
     private void executeTransactions(int numTransactions)
     {
-        boolean stopRunning = false;
+	boolean stopRunning = false;
 
-        if(numTransactions != -1)
-            printMessage("Executing " + numTransactions + " transactions...");
-        else
-            printMessage("Executing for a limited time...");
+	if(numTransactions != -1)
+	    printMessage("Executing " + numTransactions + " transactions...");
+	else
+	    printMessage("Executing for a limited time...");
 
-        for(int i = 0; (i < numTransactions || numTransactions == -1) && !stopRunning; i++)
-        {
+	for(int i = 0; (i < numTransactions || numTransactions == -1) && !stopRunning; i++)
+	{
 
-            long transactionType = rnd.nextLong(1, 100);
-            int skippedDeliveries = 0, newOrder = 0;
-            String transactionTypeName;
+	    long transactionType = rnd.nextLong(1, 100);
+	    int skippedDeliveries = 0, newOrder = 0;
+	    String transactionTypeName;
 
-            long transactionStart = System.currentTimeMillis();
+	    long transactionStart = System.currentTimeMillis();
 
-            if(transactionType <= paymentWeight)
-            {
-		jTPCCTData	term = new jTPCCTData();
+	    if(transactionType <= paymentWeight)
+	    {
+		jTPCCTData      term = new jTPCCTData();
 		term.setNumWarehouses(numWarehouses);
 		term.setWarehouse(terminalWarehouseID);
 		term.setDistrict(terminalDistrictID);
@@ -143,6 +144,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    term.generatePayment(log, rnd, 0);
 		    term.traceScreen(log);
 		    term.execute(log, db);
+		    parent.resultAppend(term);
 		    term.traceScreen(log);
 		}
 		catch (Exception e)
@@ -151,11 +153,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    e.printStackTrace();
 		    System.exit(4);
 		}
-                transactionTypeName = "Payment";
-            }
-            else if(transactionType <= paymentWeight + stockLevelWeight)
-            {
-		jTPCCTData	term = new jTPCCTData();
+		transactionTypeName = "Payment";
+	    }
+	    else if(transactionType <= paymentWeight + stockLevelWeight)
+	    {
+		jTPCCTData      term = new jTPCCTData();
 		term.setNumWarehouses(numWarehouses);
 		term.setWarehouse(terminalWarehouseID);
 		term.setDistrict(terminalDistrictID);
@@ -164,6 +166,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    term.generateStockLevel(log, rnd, 0);
 		    term.traceScreen(log);
 		    term.execute(log, db);
+		    parent.resultAppend(term);
 		    term.traceScreen(log);
 		}
 		catch (Exception e)
@@ -172,11 +175,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    e.printStackTrace();
 		    System.exit(4);
 		}
-                transactionTypeName = "Stock-Level";
-            }
-            else if(transactionType <= paymentWeight + stockLevelWeight + orderStatusWeight)
-            {
-		jTPCCTData	term = new jTPCCTData();
+		transactionTypeName = "Stock-Level";
+	    }
+	    else if(transactionType <= paymentWeight + stockLevelWeight + orderStatusWeight)
+	    {
+		jTPCCTData      term = new jTPCCTData();
 		term.setNumWarehouses(numWarehouses);
 		term.setWarehouse(terminalWarehouseID);
 		term.setDistrict(terminalDistrictID);
@@ -185,6 +188,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    term.generateOrderStatus(log, rnd, 0);
 		    term.traceScreen(log);
 		    term.execute(log, db);
+		    parent.resultAppend(term);
 		    term.traceScreen(log);
 		}
 		catch (Exception e)
@@ -193,11 +197,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    e.printStackTrace();
 		    System.exit(4);
 		}
-                transactionTypeName = "Order-Status";
-            }
-            else if(transactionType <= paymentWeight + stockLevelWeight + orderStatusWeight + deliveryWeight)
-            {
-		jTPCCTData	term = new jTPCCTData();
+		transactionTypeName = "Order-Status";
+	    }
+	    else if(transactionType <= paymentWeight + stockLevelWeight + orderStatusWeight + deliveryWeight)
+	    {
+		jTPCCTData      term = new jTPCCTData();
 		term.setNumWarehouses(numWarehouses);
 		term.setWarehouse(terminalWarehouseID);
 		term.setDistrict(terminalDistrictID);
@@ -206,6 +210,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    term.generateDelivery(log, rnd, 0);
 		    term.traceScreen(log);
 		    term.execute(log, db);
+		    parent.resultAppend(term);
 		    term.traceScreen(log);
 
 		    /*
@@ -213,9 +218,10 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		     * background queue, so we have to execute that
 		     * part here as well.
 		     */
-		    jTPCCTData	bg = term.getDeliveryBG();
+		    jTPCCTData  bg = term.getDeliveryBG();
 		    bg.traceScreen(log);
 		    bg.execute(log, db);
+		    parent.resultAppend(bg);
 		    bg.traceScreen(log);
 
 		    skippedDeliveries = bg.getSkippedDeliveries();
@@ -226,11 +232,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    e.printStackTrace();
 		    System.exit(4);
 		}
-                transactionTypeName = "Delivery";
-            }
-            else
-            {
-		jTPCCTData	term = new jTPCCTData();
+		transactionTypeName = "Delivery";
+	    }
+	    else
+	    {
+		jTPCCTData      term = new jTPCCTData();
 		term.setNumWarehouses(numWarehouses);
 		term.setWarehouse(terminalWarehouseID);
 		term.setDistrict(terminalDistrictID);
@@ -239,6 +245,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    term.generateNewOrder(log, rnd, 0);
 		    term.traceScreen(log);
 		    term.execute(log, db);
+		    parent.resultAppend(term);
 		    term.traceScreen(log);
 		}
 		catch (Exception e)
@@ -247,23 +254,23 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    e.printStackTrace();
 		    System.exit(4);
 		}
-                transactionTypeName = "New-Order";
-                newOrderCounter++;
-                newOrder = 1;
-            }
+		transactionTypeName = "New-Order";
+		newOrderCounter++;
+		newOrder = 1;
+	    }
 
-            long transactionEnd = System.currentTimeMillis();
+	    long transactionEnd = System.currentTimeMillis();
 
-            if(!transactionTypeName.equals("Delivery"))
-            {
-                parent.signalTerminalEndedTransaction(this.terminalName, transactionTypeName, transactionEnd - transactionStart, null, newOrder);
-            }
-            else
-            {
-                parent.signalTerminalEndedTransaction(this.terminalName, transactionTypeName, transactionEnd - transactionStart, (skippedDeliveries == 0 ? "None" : "" + skippedDeliveries + " delivery(ies) skipped."), newOrder);
-            }
+	    if(!transactionTypeName.equals("Delivery"))
+	    {
+		parent.signalTerminalEndedTransaction(this.terminalName, transactionTypeName, transactionEnd - transactionStart, null, newOrder);
+	    }
+	    else
+	    {
+		parent.signalTerminalEndedTransaction(this.terminalName, transactionTypeName, transactionEnd - transactionStart, (skippedDeliveries == 0 ? "None" : "" + skippedDeliveries + " delivery(ies) skipped."), newOrder);
+	    }
 
-            if(limPerMin_Terminal>0){
+	    if(limPerMin_Terminal>0){
 		long elapse = transactionEnd-transactionStart;
 		long timePerTx = 60000/limPerMin_Terminal;
 
@@ -275,15 +282,15 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 		    catch(Exception e){
 		    }
 		}
-            }
-            if(stopRunningSignal) stopRunning = true;
-        }
+	    }
+	    if(stopRunningSignal) stopRunning = true;
+	}
     }
 
 
     private void error(String type) {
       log.error(terminalName + ", TERMINAL=" + terminalName + "  TYPE=" + type + "  COUNT=" + transactionCount);
-        System.out.println(terminalName + ", TERMINAL=" + terminalName + "  TYPE=" + type + "  COUNT=" + transactionCount);
+	System.out.println(terminalName + ", TERMINAL=" + terminalName + "  TYPE=" + type + "  COUNT=" + transactionCount);
     }
 
 

@@ -5,7 +5,7 @@
 # ----
 # Read the runInfo.csv file.
 # ----
-runInfo <- read.csv("runInfo.csv", head=TRUE)
+runInfo <- read.csv("data/runInfo.csv", head=TRUE)
 
 # ----
 # Determine the grouping interval in seconds based on the
@@ -23,7 +23,7 @@ idiv <- interval * 1000.0
 # Read the result.csv and then filter the raw data
 # for != DELIVERY_BG and == NEW_ORDER transactions.
 # ----
-data1 <- read.csv("result.csv", head=TRUE)
+data1 <- read.csv("data/result.csv", head=TRUE)
 total1 <- data1[data1$ttype != 'DELIVERY_BG', ]
 neworder1 <- data1[data1$ttype == 'NEW_ORDER', ]
 
@@ -55,7 +55,7 @@ if (ymax < (ymax_count * 1.2)) {
 # ----
 # Start the output image.
 # ----
-png("tpm_nopm.png", width=1200, height=800)
+png("tpm_nopm.png", width=@WIDTH@, height=@HEIGHT@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----
@@ -92,16 +92,8 @@ legend ("topleft",
 	c("tpmTOTAL", "tpmC (NewOrder only)"),
 	fill=c("blue3", "red3"))
 title (main=c(
-    paste0("Run #", runInfo$run, " of BenchmarkSQL v", runInfo$driverVersion,
-    	   ", started ", runInfo$sessionStart),
-    paste0("driver=", runInfo$driver, ", db=", runInfo$db,
-    	   ", loadWhse=", runInfo$loadWarehouses,
-	   ", runWhse=", runInfo$runWarehouses,
-	   ", numSUTThreads=", runInfo$numSUTThreads),
-    paste0("limitTxnsPerMin=", runInfo$limitTxnsPerMin,
-    	   ", thinkTimeMultiplier=", runInfo$thinkTimeMultiplier,
-	   ", keyingTimeMultiplier=", runInfo$keyingTimeMultiplier,
-	   ", interval=", interval, "sec")
+    paste0("Run #", runInfo$run, " of BenchmarkSQL v", runInfo$driverVersion),
+    "Transactions per Minute"
     ))
 grid()
 box()

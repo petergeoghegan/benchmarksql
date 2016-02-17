@@ -44,7 +44,7 @@ public class jTPCC implements jTPCCConfig
 
     private double tpmC;
     private jTPCCRandom rnd;
-
+    private OSCollector osCollector = null;
 
     public static void main(String args[])
     {
@@ -109,6 +109,7 @@ public class jTPCC implements jTPCCConfig
 
 	log.info("Term-00, ");
 	String  resultDirectory     = getProp(ini, "resultDirectory");
+	String	osCollectorScript   = getProp(ini, "osCollectorScript");
 
 	log.info("Term-00, ");
 
@@ -179,17 +180,24 @@ public class jTPCC implements jTPCCConfig
 	    }
 	    resultDirName = sb.toString();
 	    File resultDir = new File(resultDirName);
+	    File resultDataDir = new File(resultDir, "data");
 
-	    // Create the output directory.
+	    // Create the output directory structure.
 	    if (!resultDir.mkdir())
 	    {
 		log.error("Failed to create directory '" +
-			  resultDirName + "'");
+			  resultDir.getPath() + "'");
+		System.exit(1);
+	    }
+	    if (!resultDataDir.mkdir())
+	    {
+		log.error("Failed to create directory '" +
+			  resultDataDir.getPath() + "'");
 		System.exit(1);
 	    }
 
 	    // Create the runInfo.csv file.
-	    String runInfoCSVName = new File(resultDir, "runInfo.csv").getPath();
+	    String runInfoCSVName = new File(resultDataDir, "runInfo.csv").getPath();
 	    try
 	    {
 		runInfoCSV = new BufferedWriter(
@@ -209,7 +217,7 @@ public class jTPCC implements jTPCCConfig
 		     runID);
 
 	    // Open the per transaction result.csv file.
-	    String resultCSVName = new File(resultDir, "result.csv").getPath();
+	    String resultCSVName = new File(resultDataDir, "result.csv").getPath();
 	    try
 	    {
 		resultCSV = new BufferedWriter(new FileWriter(resultCSVName));
@@ -223,6 +231,16 @@ public class jTPCC implements jTPCCConfig
 	    }
 	    log.info("Term-00, writing per transaction results to " +
 		     resultCSVName);
+
+	    if (osCollectorScript != null)
+	    {
+	    	osCollector = new OSCollector(getProp(ini, "osCollectorScript"),
+				runID,
+				Integer.parseInt(getProp(ini, "osCollectorInterval")),
+				getProp(ini, "osCollectorSSHAddr"),
+				getProp(ini, "osCollectorDevices"),
+				resultDataDir, log);
+	    }
 
 	    log.info("Term-00,");
 	}
@@ -589,6 +607,13 @@ public class jTPCC implements jTPCCConfig
 		} catch (IOException e) {
 		    log.error(e.getMessage());
 		};
+	    }
+
+	    // Stop the OSCollector, if it is active.
+	    if (osCollector != null)
+	    {
+	    	osCollector.stop();
+		osCollector = null;
 	    }
 	}
     }

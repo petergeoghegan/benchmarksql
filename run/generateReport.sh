@@ -40,7 +40,45 @@ cat >report.html <<_EOF_
     BenchmarkSQL Run #$(getRunInfo run) started $(getRunInfo sessionStart)
   </title>
   <style>
-    p {margin-left: 50px;}
+
+h1,h2,h3,h4	{ color:#2222AA;
+		}
+
+h1		{ font-family: Helvetica,Arial;
+		  font-weight: 700;
+		  font-size: 24pt;
+		}
+
+h2		{ font-family: Helvetica,Arial;
+		  font-weight: 700;
+		  font-size: 18pt;
+		}
+
+h3,h4		{ font-family: Helvetica,Arial;
+		  font-weight: 700;
+		  font-size: 16pt;
+		}
+
+p,li,dt,dd	{ font-family: Helvetica,Arial;
+		  font-size: 14pt;
+		}
+
+p		{ margin-left: 50px;
+		}
+
+pre		{ font-family: Courier,Fixed;
+		  font-size: 14pt;
+		}
+
+samp		{ font-family: Courier,Fixed;
+		  font-weight: 900;
+		  font-size: 14pt;
+		}
+
+big		{ font-weight: 900;
+		  font-size: 120%;
+		}
+
   </style>
 </head>
 <body bgcolor="#ffffff">

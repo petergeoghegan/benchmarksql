@@ -47,11 +47,11 @@ aggDelivery <- setNames(aggregate(delivery$latency, list(elapsed=trunc(delivery$
 		   c('elapsed', 'latency'));
 
 # ----
-# Determine the ymax by increasing in sqrt(2) steps until 99%
+# Determine the ymax by increasing in sqrt(2) steps until 98%
 # of ALL latencies fit into the graph. Then multiply with 1.2
 # to give some headroom for the legend.
 # ----
-ymax_total <- quantile(noBGData$latency, probs = 0.99)
+ymax_total <- quantile(noBGData$latency, probs = 0.98)
 
 ymax <- 1
 sqrt2 <- sqrt(2.0)
@@ -67,7 +67,8 @@ if (ymax < (ymax_total * 1.2)) {
 # ----
 # Start the output image.
 # ----
-png("latency.png", width=@WIDTH@, height=@HEIGHT@)
+#png("latency.png", width=@WIDTH@, height=@HEIGHT@)
+png("latency.png", width=1200, height=400)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----
@@ -151,3 +152,81 @@ title (main=c(
     ))
 grid()
 box()
+
+# ----
+# Generate the transaction summary and write it to
+# data/tx_summary.csv
+# ----
+tx_total <- NROW(noBGData)
+
+tx_name <- c(
+	'NEW_ORDER',
+	'PAYMENT',
+	'ORDER_STATUS',
+	'STOCK_LEVEL',
+	'DELIVERY',
+	'DELIVERY_BG',
+	'tpmC',
+	'tpmTotal')
+tx_count <- c(
+	NROW(newOrder),
+	NROW(payment),
+	NROW(orderStatus),
+	NROW(stockLevel),
+	NROW(delivery),
+	NROW(deliveryBG),
+	NROW(newOrder) / runInfo$runMins,
+	NROW(noBGData) / runInfo$runMins)
+tx_percent <- c(
+	sprintf("%.3f", NROW(newOrder) / tx_total * 100.0),
+	sprintf("%.3f", NROW(payment) / tx_total * 100.0),
+	sprintf("%.3f", NROW(orderStatus) / tx_total * 100.0),
+	sprintf("%.3f", NROW(stockLevel) / tx_total * 100.0),
+	sprintf("%.3f", NROW(delivery) / tx_total * 100.0),
+	NA, NA, NA)
+tx_90th <- c(
+	sprintf("%.3f", quantile(newOrder$latency, probs=0.90) / 1000.0),
+	sprintf("%.3f", quantile(payment$latency, probs=0.90) / 1000.0),
+	sprintf("%.3f", quantile(orderStatus$latency, probs=0.90) / 1000.0),
+	sprintf("%.3f", quantile(stockLevel$latency, probs=0.90) / 1000.0),
+	sprintf("%.3f", quantile(delivery$latency, probs=0.90) / 1000.0),
+	sprintf("%.3f", quantile(deliveryBG$latency, probs=0.90) / 1000.0),
+	NA, NA)
+tx_max <- c(
+	max(newOrder$latency),
+	max(payment$latency),
+	max(orderStatus$latency),
+	max(stockLevel$latency),
+	max(delivery$latency),
+	max(deliveryBG$latency),
+	NA, NA)
+tx_limit <- c("5.0", "5.0", "5.0", "20.0", "5.0", "80.0", NA, NA)
+tx_rbk <- c(
+	sprintf("%.3f", sum(newOrder$rbk) / NROW(newOrder) * 100.0),
+	NA, NA, NA, NA, NA, NA, NA)
+tx_error <- c(
+	sum(newOrder$error),
+	sum(payment$error),
+	sum(orderStatus$error),
+	sum(stockLevel$error),
+	sum(delivery$error),
+	sum(deliveryBG$error),
+	NA, NA)
+tx_dskipped <- c(
+	NA, NA, NA, NA, NA,
+	sum(deliveryBG$dskipped),
+	NA, NA)
+tx_info <- data.frame(
+	tx_name,
+	tx_count,
+	tx_percent,
+	tx_90th,
+	tx_max,
+	tx_limit,
+	tx_rbk,
+	tx_error,
+	tx_dskipped)
+
+write.csv(tx_info, file = "data/tx_summary.csv", quote = FALSE, na = "N/A",
+	row.names = FALSE)
+

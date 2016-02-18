@@ -40,7 +40,7 @@ countNewOrder <- setNames(aggregate(neworder1$latency, list(elapsed=trunc(neword
 # maximum of tpmTOTAL fits, then make sure that we have at least
 # 1.2 times that to give a little head room for the legend.
 # ----
-ymax_count <- max(countTotal$count) * 60.0
+ymax_count <- max(countTotal$count) * 60.0 / interval
 ymax <- 1
 sqrt2 <- sqrt(2.0)
 while (ymax < ymax_count) {
@@ -62,7 +62,7 @@ par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 # Plot the tpmTOTAL graph.
 # ----
 plot (
-	countTotal$elapsed / 60000.0, countTotal$count * 60.0,
+	countTotal$elapsed / 60000.0, countTotal$count * 60.0 / interval,
 	type='l', col="blue3", lwd=2,
 	axes=TRUE,
 	xlab="Elapsed Minutes",
@@ -76,7 +76,7 @@ plot (
 # ----
 par (new=T)
 plot (
-	countNewOrder$elapsed / 60000.0, countNewOrder$count * 60.0,
+	countNewOrder$elapsed / 60000.0, countNewOrder$count * 60.0 / interval,
 	type='l', col="red3", lwd=2,
 	axes=FALSE,
 	xlab="",

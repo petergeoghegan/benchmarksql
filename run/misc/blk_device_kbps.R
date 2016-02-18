@@ -63,7 +63,7 @@ plot (
 	type='l', col="blue3", lwd=2,
 	axes=TRUE,
 	xlab="Elapsed Minutes",
-	ylab="IO Operations per Second",
+	ylab="Kilobytes per Second",
 	xlim=c(0, xmax),
 	ylim=c(0, ymax)
 )

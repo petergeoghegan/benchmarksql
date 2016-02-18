@@ -22,6 +22,10 @@ Version 5.0.0 TBD lussman & jannicash:
      generation, execution and terminal trace code is moved into a
      module jTPCCTData. The database connection with all prepared
      statements has moved into a module jTPCCConnection.
+  +  Add collecting per transaction result data and OS Level
+     resource usage collection. The R statistics package is used
+     to graph detailed information and a complete report in HTML
+     can be generated from the data.
 
 Version 4.1.2 TBD jannicash:
 -----------------------------------

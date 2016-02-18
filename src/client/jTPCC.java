@@ -10,6 +10,7 @@
 import org.apache.log4j.*;
 
 import java.io.*;
+import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -195,6 +196,20 @@ public class jTPCC implements jTPCCConfig
 			  resultDataDir.getPath() + "'");
 		System.exit(1);
 	    }
+
+	    // Copy the used properties file into the resultDirectory.
+	    try
+	    {
+		Files.copy(new File(System.getProperty("prop")).toPath(), 
+			  new File(resultDir, "run.properties").toPath());
+	    }
+	    catch (IOException e)
+	    {
+		log.error(e.getMessage());
+		System.exit(1);
+	    }
+	    log.info("Term-00, copied " + System.getProperty("prop") +
+	    	     " to " + new File(resultDir, "run.properties").toPath());
 
 	    // Create the runInfo.csv file.
 	    String runInfoCSVName = new File(resultDataDir, "runInfo.csv").getPath();

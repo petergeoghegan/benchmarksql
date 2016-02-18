@@ -67,8 +67,7 @@ if (ymax < (ymax_total * 1.2)) {
 # ----
 # Start the output image.
 # ----
-#png("latency.png", width=@WIDTH@, height=@HEIGHT@)
-png("latency.png", width=1200, height=400)
+png("latency.png", width=@WIDTH@, height=@HEIGHT@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----
@@ -175,34 +174,34 @@ tx_count <- c(
 	NROW(stockLevel),
 	NROW(delivery),
 	NROW(deliveryBG),
-	NROW(newOrder) / runInfo$runMins,
-	NROW(noBGData) / runInfo$runMins)
+	sprintf("%.2f", NROW(newOrder) / runInfo$runMins),
+	sprintf("%.2f", NROW(noBGData) / runInfo$runMins))
 tx_percent <- c(
-	sprintf("%.3f", NROW(newOrder) / tx_total * 100.0),
-	sprintf("%.3f", NROW(payment) / tx_total * 100.0),
-	sprintf("%.3f", NROW(orderStatus) / tx_total * 100.0),
-	sprintf("%.3f", NROW(stockLevel) / tx_total * 100.0),
-	sprintf("%.3f", NROW(delivery) / tx_total * 100.0),
+	sprintf("%.3f%%", NROW(newOrder) / tx_total * 100.0),
+	sprintf("%.3f%%", NROW(payment) / tx_total * 100.0),
+	sprintf("%.3f%%", NROW(orderStatus) / tx_total * 100.0),
+	sprintf("%.3f%%", NROW(stockLevel) / tx_total * 100.0),
+	sprintf("%.3f%%", NROW(delivery) / tx_total * 100.0),
 	NA, NA, NA)
 tx_90th <- c(
-	sprintf("%.3f", quantile(newOrder$latency, probs=0.90) / 1000.0),
-	sprintf("%.3f", quantile(payment$latency, probs=0.90) / 1000.0),
-	sprintf("%.3f", quantile(orderStatus$latency, probs=0.90) / 1000.0),
-	sprintf("%.3f", quantile(stockLevel$latency, probs=0.90) / 1000.0),
-	sprintf("%.3f", quantile(delivery$latency, probs=0.90) / 1000.0),
-	sprintf("%.3f", quantile(deliveryBG$latency, probs=0.90) / 1000.0),
+	sprintf("%.3fs", quantile(newOrder$latency, probs=0.90) / 1000.0),
+	sprintf("%.3fs", quantile(payment$latency, probs=0.90) / 1000.0),
+	sprintf("%.3fs", quantile(orderStatus$latency, probs=0.90) / 1000.0),
+	sprintf("%.3fs", quantile(stockLevel$latency, probs=0.90) / 1000.0),
+	sprintf("%.3fs", quantile(delivery$latency, probs=0.90) / 1000.0),
+	sprintf("%.3fs", quantile(deliveryBG$latency, probs=0.90) / 1000.0),
 	NA, NA)
 tx_max <- c(
-	max(newOrder$latency),
-	max(payment$latency),
-	max(orderStatus$latency),
-	max(stockLevel$latency),
-	max(delivery$latency),
-	max(deliveryBG$latency),
+	sprintf("%.3fs", max(newOrder$latency) / 1000.0),
+	sprintf("%.3fs", max(payment$latency) / 1000.0),
+	sprintf("%.3fs", max(orderStatus$latency) / 1000.0),
+	sprintf("%.3fs", max(stockLevel$latency) / 1000.0),
+	sprintf("%.3fs", max(delivery$latency) / 1000.0),
+	sprintf("%.3fs", max(deliveryBG$latency) / 1000.0),
 	NA, NA)
 tx_limit <- c("5.0", "5.0", "5.0", "20.0", "5.0", "80.0", NA, NA)
 tx_rbk <- c(
-	sprintf("%.3f", sum(newOrder$rbk) / NROW(newOrder) * 100.0),
+	sprintf("%.3f%%", sum(newOrder$rbk) / NROW(newOrder) * 100.0),
 	NA, NA, NA, NA, NA, NA, NA)
 tx_error <- c(
 	sum(newOrder$error),

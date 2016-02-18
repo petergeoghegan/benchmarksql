@@ -5,6 +5,8 @@ if [ $# -ne 1 ] ; then
     exit 2
 fi
 
+TABLE_WIDTH="1100px"
+
 function getRunInfo()
 {
     exec 3< data/runInfo.csv
@@ -26,8 +28,13 @@ function getRunInfoColumns()
     echo "${hdrs}"
 }
 
-./generateGraphs.sh "$1"
-cd "$1"
+function getProp()
+{
+    grep "^${1}=" run.properties | sed -e "s/^${1}=//"
+}
+
+./generateGraphs.sh "${1}"
+cd "${1}"
 echo -n "Generating ${1}/report.html ... "
 
 # ----
@@ -85,43 +92,122 @@ big		{ font-weight: 900;
   <h1>
     BenchmarkSQL Run #$(getRunInfo run) started $(getRunInfo sessionStart)
   </h1>
-  <h2>
-    Run Parameters
-  </h2>
+
   <p>
-  <table border="1">
-    <tr>
-      <th align="center"><b>Parameter</b></th>
-      <th align="center"><b>Value</b></th>
-    </tr>
+    This TPC-C style benchmark run was performed by the "$(getRunInfo driver)"
+    driver of BenchmarkSQL version $(getRunInfo driverVersion). 
+  </p>
 _EOF_
 
 # ----
-# Loop over the values in the runInfo.csv file.
-# ----
-for col in $(getRunInfoColumns) ; do
-    cat >>report.html <<_EOF_
-    <tr>
-      <td align="left">${col}</td>
-      <td align="left">$(getRunInfo ${col})</td>
-    </tr>
-_EOF_
-done
-
-# ----
-# Finish the run parameter table, then add the graph for tpmC/tpmTOTAL.
+# Show the run properties.
 # ----
 cat >>report.html <<_EOF_
-  </table>
+  <h2>
+    Run Properties
+  </h2>
+  <p>
+    <table width="${TABLE_WIDTH}" border="0">
+    <tr><td bgcolor="#f0f0f0">
+    <pre><small>
+_EOF_
+sed -e 's/^password=.*/password=\*\*\*\*\*\*/' <run.properties >>report.html
+cat >>report.html <<_EOF_
+    </small></pre>
+    </td></tr>
+    </table>
   </p>
 
+_EOF_
+
+# ----
+# Show the result summary.
+# ----
+cat >>report.html <<_EOF_
+  <h2>
+    Result Summary
+  </h2>
+_EOF_
+
+if [ $(getRunInfo driver) == "simple" ] ; then
+    cat >> report.html <<_EOF_
+    <p>
+      Note that the "simple" driver is not a true TPC-C implementation.
+      This driver only measures the database response time, not the
+      response time of a System under Test as it would be experienced
+      by an end-user in a 3-tier test implementation.
+    </p>
+_EOF_
+fi
+
+cat >> report.html <<_EOF_
+  <p>
+    <table width="${TABLE_WIDTH}" border="2">
+    <tr>
+      <th rowspan="2" width="16%"><b>Transaction<br/>Type</b></th>
+      <th colspan="2" width="24%"><b>Latency</b></th>
+      <th rowspan="2" width="12%"><b>Count</b></th>
+      <th rowspan="2" width="12%"><b>Percent</b></th>
+      <th rowspan="2" width="12%"><b>Rollback</b></th>
+      <th rowspan="2" width="12%"><b>Errors</b></th>
+      <th rowspan="2" width="12%"><b>Skipped<br/>Deliveries</b></th>
+    </tr>
+    <tr>
+      <th width="12%"><b>90th&nbsp;%</b></th>
+      <th width="12%"><b>Maximum</b></th>
+    </tr>
+_EOF_
+
+tr ',' ' ' <data/tx_summary.csv | \
+    while read name count percent ninth max limit rbk error dskipped ; do
+	[ ${name} == "tx_name" ] && continue
+	[ ${name} == "tpmC" ] && continue
+	[ ${name} == "tpmTotal" ] && continue
+
+	echo "    <tr>"
+	echo "      <td align=\"left\">${name}</td>"
+	echo "      <td align=\"right\">${ninth}</td>"
+	echo "      <td align=\"right\">${max}</td>"
+	echo "      <td align=\"right\">${count}</td>"
+	echo "      <td align=\"right\">${percent}</td>"
+	echo "      <td align=\"right\">${rbk}</td>"
+	echo "      <td align=\"right\">${error}</td>"
+	echo "      <td align=\"right\">${dskipped}</td>"
+	echo "    </tr>"
+    done >>report.html
+
+tpmC=$(grep "^tpmC," data/tx_summary.csv | sed -e 's/[^,]*,//' -e 's/,.*//')
+tpmTotal=$(grep "^tpmTotal," data/tx_summary.csv | sed -e 's/[^,]*,//' -e 's/,.*//')
+cat >>report.html <<_EOF_
+    </table>
+  </p>
+
+  <p>
+    <table border="0">
+      <tr>
+        <td align="left"><big><b>Overall tpmC:</b></big></td>
+        <td align="right"><big><b>${tpmC}</b></big></td>
+      </tr>
+      <tr>
+        <td align="left"><big><b>Overall tpmTotal:</b></big></td>
+        <td align="right"><big><b>${tpmTotal}</b></big></td>
+      </tr>
+    </table>
+  </p>
+
+_EOF_
+
+# ----
+# Show the graphs for tpmC/tpmTOTAL and latency.
+# ----
+cat >>report.html <<_EOF_
   <h2>
     Transactions per Minute and Transaction Latency
   </h2>
   <p>
     tpmC is the number of NEW_ORDER Transactions, that where processed
     per minute. tpmTOTAL is the number of Transactions processed per
-    minute including all transaction types (without the background part
+    minute for all transaction types, but without the background part
     of the DELIVERY transaction. 
 
     <br/>

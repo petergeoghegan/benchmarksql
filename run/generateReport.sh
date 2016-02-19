@@ -177,6 +177,7 @@ tr ',' ' ' <data/tx_summary.csv | \
     done >>report.html
 
 tpmC=$(grep "^tpmC," data/tx_summary.csv | sed -e 's/[^,]*,//' -e 's/,.*//')
+tpmCpct=$(grep "^tpmC," data/tx_summary.csv | sed -e 's/[^,]*,[^,]*,//' -e 's/,.*//')
 tpmTotal=$(grep "^tpmTotal," data/tx_summary.csv | sed -e 's/[^,]*,//' -e 's/,.*//')
 cat >>report.html <<_EOF_
     </table>
@@ -193,6 +194,17 @@ cat >>report.html <<_EOF_
         <td align="right"><big><b>${tpmTotal}</b></big></td>
       </tr>
     </table>
+  </p>
+  <p>
+    The TPC-C specification has an theoretical maximum of 12.86 NEW_ORDER
+    transactions per minute per warehouse. In reality this value cannot
+    be reached because it would require a perfect mix with 45% of NEW_ORDER
+    transactions and a ZERO response time from the System under Test
+    including the database. 
+  </p>
+  <p>
+    The above tpmC of ${tpmC} is ${tpmCpct} of that theoretical maximum for a
+    database with $(getRunInfo runWarehouses) warehouses.
   </p>
 
 _EOF_

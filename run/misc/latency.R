@@ -182,7 +182,10 @@ tx_percent <- c(
 	sprintf("%.3f%%", NROW(orderStatus) / tx_total * 100.0),
 	sprintf("%.3f%%", NROW(stockLevel) / tx_total * 100.0),
 	sprintf("%.3f%%", NROW(delivery) / tx_total * 100.0),
-	NA, NA, NA)
+	NA,
+	sprintf("%.3f%%", NROW(newOrder) / runInfo$runMins /
+			  runInfo$runWarehouses / 0.1286),
+	NA)
 tx_90th <- c(
 	sprintf("%.3fs", quantile(newOrder$latency, probs=0.90) / 1000.0),
 	sprintf("%.3fs", quantile(payment$latency, probs=0.90) / 1000.0),

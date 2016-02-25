@@ -1,5 +1,5 @@
-BENCHMARKSQL-5 README
-=====================
+BENCHMARKSQL README
+===================
 
 CHANGE LOG:
 -----------
@@ -116,4 +116,3 @@ Versions 1.0 thru 2.2  2004 - 2012 lussman:
 -------------------------------------------
   + Dare to Compare
   + Forked from the jTPCC project
-

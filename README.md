@@ -6,10 +6,8 @@ CHANGE LOG:
 
 Version 5.0.0 TBD lussman & jannicash:
 --------------------------------------
-  + WIP
   +  Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1102 driver
   +  Improve support for Oracle
-  +  Add support for MySQL & SQLServer/Sybase
   +  Re-implement the non-uniform random generator in TPC-C style.
   +  Conform to clause 4.3.3.1 and enable lookup by last name
   +  Add a switch to disable terminal-warehouse association, spreading

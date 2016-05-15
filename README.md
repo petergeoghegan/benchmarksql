@@ -4,29 +4,29 @@ BENCHMARKSQL README
 CHANGE LOG:
 -----------
 
-Version 5.0.0 TBD lussman & jannicash:
---------------------------------------
+Version 5.0rc2 jannicash:
+-------------------------
   +  Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1102 driver
   +  Improve support for Oracle
-  +  Re-implement the non-uniform random generator in TPC-C style.
+  +  Re-implement the non-uniform random generator in TPC-C style
   +  Conform to clause 4.3.3.1 and enable lookup by last name
   +  Add a switch to disable terminal-warehouse association, spreading
      the data access over all configured warehouses.
   +  Re-worked the run shell scripts and the location of SQL files to
-     make support of more database types easier.
-  +  Add support for Firebird (http://www.firebirdsql.org).
-  +  Add FOREIGN KEYS as defined by TPC-C 1.3.
+     make support of more database types easier
+  +  Add support for Firebirdsql
+  +  Add FOREIGN KEYS as defined by TPC-C 1.3
   +  Major code overhaul. The per transaction type terminal data
      generation, execution and terminal trace code is moved into a
      module jTPCCTData. The database connection with all prepared
-     statements has moved into a module jTPCCConnection.
+     statements has moved into a module jTPCCConnection
   +  Add collecting per transaction result data and OS Level
      resource usage collection. The R statistics package is used
      to graph detailed information and a complete report in HTML
-     can be generated from the data.
+     can be generated from the data
 
-Version 4.1.2 TBD jannicash:
------------------------------------
+Version 4.1.2 jannicash:
+------------------------
   + Fixed one more preparedStatement() leak. Hopefully with the help
     of Oracle's V$OPEN_CURSOR view we got them all now.
   + Fixed a possible deadlock problem in the NEW_ORDER transaction.

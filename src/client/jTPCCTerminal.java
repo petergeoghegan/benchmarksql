@@ -133,6 +133,20 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 
 	    long transactionStart = System.currentTimeMillis();
 
+	    /*
+	     * TPC/C specifies that each terminal has a fixed
+	     * "home" warehouse. However, since this implementation
+	     * does not simulate "terminals", but rather simulates
+	     * "application threads", that association is no longer
+	     * valid. In the case of having less clients than
+	     * warehouses (which should be the normal case), it
+	     * leaves the warehouses without a client without any
+	     * significant traffic, changing the overall database
+	     * access pattern significantly.
+	     */
+	    if(!terminalWarehouseFixed)
+		terminalWarehouseID = rnd.nextInt(1, numWarehouses);
+
 	    if(transactionType <= paymentWeight)
 	    {
 		jTPCCTData      term = new jTPCCTData();

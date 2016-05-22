@@ -33,6 +33,22 @@ public class jTPCCRandom
 
     private     Random  random;
 
+    private	String	string_A_6[];
+    private	String	string_A_8[];
+    private	String	string_A_10[];
+    private	String	string_A_12[];
+    private	String	string_A_14[];
+    private	String	string_A_24[];
+    private	String	string_A_26[];
+    private	String	string_A_300[];
+
+    private	String	string_B_4[];
+    private	String	string_B_8[];
+    private	String	string_B_10[];
+    private	String	string_B_12[];
+    private	String	string_B_24[];
+    private	String	string_B_200[];
+
     /*
      * jTPCCRandom()
      *
@@ -50,6 +66,7 @@ public class jTPCCRandom
 	jTPCCRandom.nURandCI_ID = nextLong(0, 8191);
 
 	initialized = true;
+	System.out.println("random initialized");
     }
 
     /*
@@ -93,6 +110,7 @@ public class jTPCCRandom
     private jTPCCRandom(jTPCCRandom parent)
     {
 	this.random = new Random(System.nanoTime());
+	this.generateStrings();
     }
 
     /*
@@ -110,6 +128,52 @@ public class jTPCCRandom
 	return new jTPCCRandom(this);
     }
 
+    private void generateStrings()
+    {
+	string_A_6 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_6[i] = getAString(6, 6);
+	string_A_8 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_8[i] = getAString(8, 8);
+	string_A_10 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_10[i] = getAString(10, 10);
+	string_A_12 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_12[i] = getAString(12, 12);
+	string_A_14 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_14[i] = getAString(14, 14);
+	string_A_24 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_24[i] = getAString(24, 24);
+	string_A_26 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_26[i] = getAString(26, 26);
+	string_A_300 = new String[100];
+	for (int i = 0; i < 100; i++)
+	    string_A_300[i] = getAString(300, 300);
+
+	string_B_4 = new String[40];
+	for (int i = 0; i < 40; i++)
+	    string_B_4[i] = getAString(i / 10, i / 10);
+	string_B_8 = new String[80];
+	for (int i = 0; i < 40; i++)
+	    string_B_8[i] = getAString(i / 10, i / 10);
+	string_B_10 = new String[100];
+	for (int i = 0; i < 40; i++)
+	    string_B_10[i] = getAString(i / 10, i / 10);
+	string_B_12 = new String[120];
+	for (int i = 0; i < 120; i++)
+	    string_B_12[i] = getAString(i / 10, i / 10);
+	string_B_24 = new String[240];
+	for (int i = 0; i < 240; i++)
+	    string_B_24[i] = getAString(i / 10, i / 10);
+	string_B_200 = new String[2000];
+	for (int i = 0; i < 2000; i++)
+	    string_B_200[i] = getAString(i / 10, i / 10);
+    }
 
     /*
      * nextLong(x, y)
@@ -160,6 +224,85 @@ public class jTPCCRandom
 	    result += aStringChars[(int)nextLong(0, 61)];
 	    have++;
 	}
+
+	return result;
+    }
+
+    public String getAString_300_500()
+    {
+        String result = new String();
+
+	result += string_A_300[nextInt(0, 99)];
+	result += string_B_200[nextInt(0, 1999)];
+
+	return result;
+    }
+
+    public String getAString_6_10()
+    {
+        String result = new String();
+
+	result += string_A_6[nextInt(0, 99)];
+	result += string_B_4[nextInt(0, 39)];
+
+	return result;
+    }
+
+    public String getAString_8_16()
+    {
+        String result = new String();
+
+	result += string_A_8[nextInt(0, 99)];
+	result += string_B_8[nextInt(0, 79)];
+
+	return result;
+    }
+
+    public String getAString_10_20()
+    {
+        String result = new String();
+
+	result += string_A_10[nextInt(0, 99)];
+	result += string_B_10[nextInt(0, 99)];
+
+	return result;
+    }
+
+    public String getAString_12_24()
+    {
+        String result = new String();
+
+	result += string_A_12[nextInt(0, 99)];
+	result += string_B_12[nextInt(0, 119)];
+
+	return result;
+    }
+
+    public String getAString_14_24()
+    {
+        String result = new String();
+
+	result += string_A_14[nextInt(0, 99)];
+	result += string_B_10[nextInt(0, 99)];
+
+	return result;
+    }
+
+    public String getAString_24()
+    {
+        String result = new String();
+
+	result += string_A_24[nextInt(0, 99)];
+
+	return result;
+    }
+
+    public String getAString_26_50()
+    {
+        String result = new String();
+
+	result += string_A_26[nextInt(0, 99)];
+	result += string_B_24[nextInt(0, 239)];
 
 	return result;
     }

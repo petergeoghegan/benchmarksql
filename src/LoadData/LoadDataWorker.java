@@ -302,14 +302,14 @@ public class LoadDataWorker implements Runnable
 	    }
 	    else
 	    {
-		iData = rnd.getAString(26, 50);
+		iData = rnd.getAString_26_50();
 	    }
 
 	    if (writeCSV)
 	    {
 		fmtItem.format("%d,%s,%.2f,%s,%d\n",
 			i_id,
-			rnd.getAString(14, 24),
+			rnd.getAString_14_24(),
 			((double)rnd.nextLong(100, 10000)) / 100.0,
 			iData,
 			rnd.nextInt(1, 10000));
@@ -319,7 +319,7 @@ public class LoadDataWorker implements Runnable
 	    {
 		stmtItem.setInt(1, i_id);
 		stmtItem.setInt(2, rnd.nextInt(1, 10000));
-		stmtItem.setString(3, rnd.getAString(14, 24));
+		stmtItem.setString(3, rnd.getAString_14_24());
 		stmtItem.setDouble(4, ((double)rnd.nextLong(100, 10000)) / 100.0);
 		stmtItem.setString(5, iData);
 
@@ -360,10 +360,10 @@ public class LoadDataWorker implements Runnable
 		w_id,
 		300000.0,
 		((double)rnd.nextLong(0, 2000)) / 10000.0,
-		rnd.getAString(6, 10),
-		rnd.getAString(10, 20),
-		rnd.getAString(10, 20),
-		rnd.getAString(10, 20),
+		rnd.getAString_6_10(),
+		rnd.getAString_10_20(),
+		rnd.getAString_10_20(),
+		rnd.getAString_10_20(),
 		rnd.getState(),
 		rnd.getNString(4, 4) + "11111");
 
@@ -372,10 +372,10 @@ public class LoadDataWorker implements Runnable
 	else
 	{
 	    stmtWarehouse.setInt(1, w_id);
-	    stmtWarehouse.setString(2, rnd.getAString(6, 10));
-	    stmtWarehouse.setString(3, rnd.getAString(10, 20));
-	    stmtWarehouse.setString(4, rnd.getAString(10, 20));
-	    stmtWarehouse.setString(5, rnd.getAString(10, 20));
+	    stmtWarehouse.setString(2, rnd.getAString_6_10());
+	    stmtWarehouse.setString(3, rnd.getAString_10_20());
+	    stmtWarehouse.setString(4, rnd.getAString_10_20());
+	    stmtWarehouse.setString(5, rnd.getAString_10_20());
 	    stmtWarehouse.setString(6, rnd.getState());
 	    stmtWarehouse.setString(7, rnd.getNString(4, 4) + "11111");
 	    stmtWarehouse.setDouble(8, ((double)rnd.nextLong(0, 2000)) / 10000.0);
@@ -416,7 +416,7 @@ public class LoadDataWorker implements Runnable
 	    }
 	    else
 	    {
-		sData = rnd.getAString(26, 50);
+		sData = rnd.getAString_26_50();
 	    }
 
 	    if (writeCSV)
@@ -430,32 +430,32 @@ public class LoadDataWorker implements Runnable
 				0,
 				0,
 				sData,
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24),
-				rnd.getAString(24, 24));
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24(),
+				rnd.getAString_24());
 	    }
 	    else
 	    {
 		stmtStock.setInt(1, s_i_id);
 		stmtStock.setInt(2, w_id);
 		stmtStock.setInt(3, rnd.nextInt(10, 100));
-		stmtStock.setString(4, rnd.getAString(24, 24));
-		stmtStock.setString(5, rnd.getAString(24, 24));
-		stmtStock.setString(6, rnd.getAString(24, 24));
-		stmtStock.setString(7, rnd.getAString(24, 24));
-		stmtStock.setString(8, rnd.getAString(24, 24));
-		stmtStock.setString(9, rnd.getAString(24, 24));
-		stmtStock.setString(10, rnd.getAString(24, 24));
-		stmtStock.setString(11, rnd.getAString(24, 24));
-		stmtStock.setString(12, rnd.getAString(24, 24));
-		stmtStock.setString(13, rnd.getAString(24, 24));
+		stmtStock.setString(4, rnd.getAString_24());
+		stmtStock.setString(5, rnd.getAString_24());
+		stmtStock.setString(6, rnd.getAString_24());
+		stmtStock.setString(7, rnd.getAString_24());
+		stmtStock.setString(8, rnd.getAString_24());
+		stmtStock.setString(9, rnd.getAString_24());
+		stmtStock.setString(10, rnd.getAString_24());
+		stmtStock.setString(11, rnd.getAString_24());
+		stmtStock.setString(12, rnd.getAString_24());
+		stmtStock.setString(13, rnd.getAString_24());
 		stmtStock.setInt(14, 0);
 		stmtStock.setInt(15, 0);
 		stmtStock.setInt(16, 0);
@@ -488,10 +488,10 @@ public class LoadDataWorker implements Runnable
 			30000.0,
 			((double)rnd.nextLong(0, 2000)) / 10000.0,
 			3001,
-			rnd.getAString(6, 10),
-			rnd.getAString(10, 20),
-			rnd.getAString(10, 20),
-			rnd.getAString(10, 20),
+			rnd.getAString_6_10(),
+			rnd.getAString_10_20(),
+			rnd.getAString_10_20(),
+			rnd.getAString_10_20(),
 			rnd.getState(),
 			rnd.getNString(4, 4) + "11111");
 
@@ -501,10 +501,10 @@ public class LoadDataWorker implements Runnable
 	    {
 		stmtDistrict.setInt(1, d_id);
 		stmtDistrict.setInt(2, w_id);
-		stmtDistrict.setString(3, rnd.getAString(6, 10));
-		stmtDistrict.setString(4, rnd.getAString(10, 20));
-		stmtDistrict.setString(5, rnd.getAString(10, 20));
-		stmtDistrict.setString(6, rnd.getAString(10, 20));
+		stmtDistrict.setString(3, rnd.getAString_6_10());
+		stmtDistrict.setString(4, rnd.getAString_10_20());
+		stmtDistrict.setString(5, rnd.getAString_10_20());
+		stmtDistrict.setString(6, rnd.getAString_10_20());
 		stmtDistrict.setString(7, rnd.getState());
 		stmtDistrict.setString(8, rnd.getNString(4, 4) + "11111");
 		stmtDistrict.setDouble(9, ((double)rnd.nextLong(0, 2000)) / 10000.0);
@@ -530,36 +530,36 @@ public class LoadDataWorker implements Runnable
 			((double)rnd.nextLong(0, 5000)) / 10000.0,
 			(rnd.nextInt(1, 100) <= 90) ? "GC" : "BC",
 			(c_id <= 1000) ? rnd.getCLast(c_id - 1) : rnd.getCLast(),
-			rnd.getAString(8, 16),
+			rnd.getAString_8_16(),
 			50000.00,
 			-10.00,
 			10.00,
 			1,
 			0,
-			rnd.getAString(10, 20),
-			rnd.getAString(10, 20),
-			rnd.getAString(10, 20),
+			rnd.getAString_10_20(),
+			rnd.getAString_10_20(),
+			rnd.getAString_10_20(),
 			rnd.getState(),
 			rnd.getNString(4, 4) + "11111",
 			rnd.getNString(16, 16),
 			new java.sql.Timestamp(System.currentTimeMillis()).toString(),
 			"OE",
-			rnd.getAString(300, 500));
+			rnd.getAString_300_500());
 		}
 		else
 		{
 		    stmtCustomer.setInt(1, c_id);
 		    stmtCustomer.setInt(2, d_id);
 		    stmtCustomer.setInt(3, w_id);
-		    stmtCustomer.setString(4, rnd.getAString(8, 16));
+		    stmtCustomer.setString(4, rnd.getAString_8_16());
 		    stmtCustomer.setString(5, "OE");
 		    if (c_id <= 1000)
 			stmtCustomer.setString(6, rnd.getCLast(c_id - 1));
 		    else
 			stmtCustomer.setString(6, rnd.getCLast());
-		    stmtCustomer.setString(7, rnd.getAString(10, 20));
-		    stmtCustomer.setString(8, rnd.getAString(10, 20));
-		    stmtCustomer.setString(9, rnd.getAString(10, 20));
+		    stmtCustomer.setString(7, rnd.getAString_10_20());
+		    stmtCustomer.setString(8, rnd.getAString_10_20());
+		    stmtCustomer.setString(9, rnd.getAString_10_20());
 		    stmtCustomer.setString(10, rnd.getState());
 		    stmtCustomer.setString(11, rnd.getNString(4, 4) + "11111");
 		    stmtCustomer.setString(12, rnd.getNString(16, 16));
@@ -574,7 +574,7 @@ public class LoadDataWorker implements Runnable
 		    stmtCustomer.setDouble(18, 10.00);
 		    stmtCustomer.setInt(19, 1);
 		    stmtCustomer.setInt(20, 1);
-		    stmtCustomer.setString(21, rnd.getAString(300, 500));
+		    stmtCustomer.setString(21, rnd.getAString_300_500());
 
 		    stmtCustomer.addBatch();
 		}
@@ -593,7 +593,7 @@ public class LoadDataWorker implements Runnable
 			w_id,
 			new java.sql.Timestamp(System.currentTimeMillis()).toString(),
 			10.00,
-			rnd.getAString(12, 24));
+			rnd.getAString_12_24());
 		}
 		else
 		{
@@ -605,7 +605,7 @@ public class LoadDataWorker implements Runnable
 		    stmtHistory.setInt(6, w_id);
 		    stmtHistory.setTimestamp(7, new java.sql.Timestamp(System.currentTimeMillis()));
 		    stmtHistory.setDouble(8, 10.00);
-		    stmtHistory.setString(9, rnd.getAString(12, 24));
+		    stmtHistory.setString(9, rnd.getAString_12_24());
 
 		    stmtHistory.addBatch();
 		}
@@ -694,7 +694,7 @@ public class LoadDataWorker implements Runnable
 			    (o_id < 2101) ? 0.00 : ((double)rnd.nextLong(1, 999999)) / 100.0,
 			    w_id,
 			    5,
-			    rnd.getAString(24, 24));
+			    rnd.getAString_24());
 		    }
 		    else
 		    {
@@ -713,7 +713,7 @@ public class LoadDataWorker implements Runnable
 			    stmtOrderLine.setDouble(9, 0.00);
 			else
 			    stmtOrderLine.setDouble(9, ((double)rnd.nextLong(1, 999999)) / 100.0);
-			stmtOrderLine.setString(10, rnd.getAString(24, 24));
+			stmtOrderLine.setString(10, rnd.getAString_24());
 
 			stmtOrderLine.addBatch();
 		    }

@@ -155,23 +155,23 @@ public class jTPCCRandom
 	for (int i = 0; i < 100; i++)
 	    string_A_300[i] = getAString(300, 300);
 
-	string_B_4 = new String[40];
-	for (int i = 0; i < 40; i++)
+	string_B_4 = new String[50];
+	for (int i = 0; i < 50; i++)
 	    string_B_4[i] = getAString(i / 10, i / 10);
-	string_B_8 = new String[80];
-	for (int i = 0; i < 40; i++)
+	string_B_8 = new String[90];
+	for (int i = 0; i < 90; i++)
 	    string_B_8[i] = getAString(i / 10, i / 10);
-	string_B_10 = new String[100];
-	for (int i = 0; i < 40; i++)
+	string_B_10 = new String[110];
+	for (int i = 0; i < 110; i++)
 	    string_B_10[i] = getAString(i / 10, i / 10);
-	string_B_12 = new String[120];
-	for (int i = 0; i < 120; i++)
+	string_B_12 = new String[130];
+	for (int i = 0; i < 130; i++)
 	    string_B_12[i] = getAString(i / 10, i / 10);
-	string_B_24 = new String[240];
-	for (int i = 0; i < 240; i++)
+	string_B_24 = new String[250];
+	for (int i = 0; i < 250; i++)
 	    string_B_24[i] = getAString(i / 10, i / 10);
-	string_B_200 = new String[2000];
-	for (int i = 0; i < 2000; i++)
+	string_B_200 = new String[2010];
+	for (int i = 0; i < 2010; i++)
 	    string_B_200[i] = getAString(i / 10, i / 10);
     }
 
@@ -228,22 +228,12 @@ public class jTPCCRandom
 	return result;
     }
 
-    public String getAString_300_500()
-    {
-        String result = new String();
-
-	result += string_A_300[nextInt(0, 99)];
-	result += string_B_200[nextInt(0, 1999)];
-
-	return result;
-    }
-
     public String getAString_6_10()
     {
         String result = new String();
 
 	result += string_A_6[nextInt(0, 99)];
-	result += string_B_4[nextInt(0, 39)];
+	result += string_B_4[nextInt(0, 49)];
 
 	return result;
     }
@@ -253,7 +243,7 @@ public class jTPCCRandom
         String result = new String();
 
 	result += string_A_8[nextInt(0, 99)];
-	result += string_B_8[nextInt(0, 79)];
+	result += string_B_8[nextInt(0, 89)];
 
 	return result;
     }
@@ -263,7 +253,7 @@ public class jTPCCRandom
         String result = new String();
 
 	result += string_A_10[nextInt(0, 99)];
-	result += string_B_10[nextInt(0, 99)];
+	result += string_B_10[nextInt(0, 109)];
 
 	return result;
     }
@@ -273,7 +263,7 @@ public class jTPCCRandom
         String result = new String();
 
 	result += string_A_12[nextInt(0, 99)];
-	result += string_B_12[nextInt(0, 119)];
+	result += string_B_12[nextInt(0, 129)];
 
 	return result;
     }
@@ -283,7 +273,7 @@ public class jTPCCRandom
         String result = new String();
 
 	result += string_A_14[nextInt(0, 99)];
-	result += string_B_10[nextInt(0, 99)];
+	result += string_B_10[nextInt(0, 109)];
 
 	return result;
     }
@@ -302,7 +292,17 @@ public class jTPCCRandom
         String result = new String();
 
 	result += string_A_26[nextInt(0, 99)];
-	result += string_B_24[nextInt(0, 239)];
+	result += string_B_24[nextInt(0, 249)];
+
+	return result;
+    }
+
+    public String getAString_300_500()
+    {
+        String result = new String();
+
+	result += string_A_300[nextInt(0, 99)];
+	result += string_B_200[nextInt(0, 2009)];
 
 	return result;
     }

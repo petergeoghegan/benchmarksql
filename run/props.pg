@@ -19,6 +19,10 @@ limitTxnsPerMin=300
 //entire configured database evenly.
 terminalWarehouseFixed=true
 
+//Set to true to use stored procedures for the execution of all
+//transactions.
+useStoredProcedures=false
+
 //The following five values must add up to 100
 //The default percentages of 45, 43, 4, 4 & 4 match the TPC-C spec
 newOrderWeight=45

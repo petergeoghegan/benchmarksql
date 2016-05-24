@@ -12,7 +12,7 @@ if [ ! -f "${PROPS}" ] ; then
 fi
 DB="$(grep '^db=' $PROPS | sed -e 's/^db=//')"
 
-STEPS="tableDrops"
+STEPS="storedProcedureDrops tableDrops"
 
 for step in ${STEPS} ; do
     ./runSQL.sh "${PROPS}" $step

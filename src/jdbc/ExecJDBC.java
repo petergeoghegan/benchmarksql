@@ -20,6 +20,7 @@ public class ExecJDBC {
     Connection conn = null;
     Statement stmt = null;
     String rLine = null;
+    String sLine = null;
     StringBuffer sql = new StringBuffer();
 
     try {
@@ -49,11 +50,27 @@ public class ExecJDBC {
 
          if (line.length() != 0) {
            if (line.startsWith("--")) {
-              System.out.println(line);  // print comment line
+              System.out.println(rLine);  // print comment line
            } else {
+	       if (line.equals("$$"))
+	       {
+	           sql.append(rLine);
+	           sql.append("\n");
+		   while((rLine = in.readLine()) != null) {
+		       line = rLine.trim();
+		       sql.append(rLine);
+		       sql.append("\n");
+		       if (line.equals("$$"))
+		       {
+		           break;
+		       }
+		   }
+		   continue;
+	       }
+
 	       if (line.endsWith("\\;"))
 	       {
-	         sql.append(line.replaceAll("\\\\;", ";"));
+	         sql.append(rLine.replaceAll("\\\\;", ";"));
 		 sql.append("\n");
 	       }
 	       else

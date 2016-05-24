@@ -27,6 +27,8 @@ public class jTPCCConnection
     public PreparedStatement    stmtNewOrderUpdateStock;
     public PreparedStatement    stmtNewOrderInsertOrderLine;
 
+    public PreparedStatement	stmtNewOrderStoredProc;
+
     public PreparedStatement    stmtPaymentSelectWarehouse;
     public PreparedStatement    stmtPaymentSelectDistrict;
     public PreparedStatement    stmtPaymentSelectCustomerListByLast;
@@ -107,6 +109,13 @@ public class jTPCCConnection
 		"    ol_i_id, ol_supply_w_id, ol_quantity, " +
 		"    ol_amount, ol_dist_info) " +
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+	switch (dbType)
+	{
+	    case jTPCCConfig.DB_POSTGRES:
+		stmtNewOrderStoredProc = dbConn.prepareStatement(
+		    "SELECT * FROM bmsql_proc_new_order (?, ?, ?, ?, ?, ?)");
+	}
 
 	// PreparedStatements for PAYMENT
 	stmtPaymentSelectWarehouse = dbConn.prepareStatement(
@@ -274,5 +283,10 @@ public class jTPCCConnection
 	throws SQLException
     {
 	dbConn.rollback();
+    }
+
+    public Connection getConnection()
+    {
+        return this.dbConn;
     }
 }

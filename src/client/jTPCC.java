@@ -100,7 +100,8 @@ public class jTPCC implements jTPCCConfig
 	    errorMessage("Term-00, Must indicate either transactions per terminal or number of run minutes!");
 	};
 	String  limPerMin           = getProp(ini,"limitTxnsPerMin");
-	String  iTermWhseFixed          = getProp(ini,"terminalWarehouseFixed");
+	String  iTermWhseFixed      = getProp(ini,"terminalWarehouseFixed");
+	String  iUseStoredProcs     = getProp(ini,"useStoredProcedures");
 	log.info("Term-00, ");
 	String  iNewOrderWeight     = getProp(ini,"newOrderWeight");
 	String  iPaymentWeight      = getProp(ini,"paymentWeight");
@@ -272,6 +273,7 @@ public class jTPCC implements jTPCCConfig
 		int newOrderWeightValue = -1, paymentWeightValue = -1, orderStatusWeightValue = -1, deliveryWeightValue = -1, stockLevelWeightValue = -1;
 		long executionTimeMillis = -1;
 		boolean terminalWarehouseFixed = true;
+		boolean useStoredProcedures = false;
 		long CLoad;
 
 		Properties dbProps = new Properties();
@@ -403,6 +405,7 @@ public class jTPCC implements jTPCCConfig
 		}
 
 		terminalWarehouseFixed = Boolean.parseBoolean(iTermWhseFixed);
+		useStoredProcedures = Boolean.parseBoolean(iUseStoredProcs);
 
 		try
 		{
@@ -439,6 +442,10 @@ public class jTPCC implements jTPCCConfig
 		    printMessage("Terminal Warehouse is fixed");
 		else
 		    printMessage("Terminal Warehouse is NOT fixed");
+		if (useStoredProcedures)
+		    printMessage("Using Stored Procedures");
+		else
+		    printMessage("NOT using Stored Procedures");
 		printMessage("Transaction Weights: " + newOrderWeightValue + "% New-Order, " + paymentWeightValue + "% Payment, " + orderStatusWeightValue + "% Order-Status, " + deliveryWeightValue + "% Delivery, " + stockLevelWeightValue + "% Stock-Level");
 
 		printMessage("Number of Terminals\t" + numTerminals);
@@ -479,6 +486,7 @@ public class jTPCC implements jTPCCConfig
 			(terminalName, terminalWarehouseID, terminalDistrictID,
 			 conn, dbType,
 			 transactionsPerTerminal, terminalWarehouseFixed,
+			 useStoredProcedures,
 			 paymentWeightValue, orderStatusWeightValue,
 			 deliveryWeightValue, stockLevelWeightValue, numWarehouses, limPerMin_Terminal, this);
 

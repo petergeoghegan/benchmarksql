@@ -10,6 +10,7 @@ import org.apache.log4j.*;
 
 import java.util.*;
 import java.sql.*;
+import java.math.*;
 
 public class jTPCCTData
 {
@@ -56,6 +57,8 @@ public class jTPCCTData
 
     private StringBuffer        resultSB = new StringBuffer();
     private Formatter           resultFmt = new Formatter(resultSB);
+    private boolean		useStoredProcedures = false;
+    private int			dbType = jTPCCConfig.DB_UNKNOWN;
 
     public void setNumWarehouses(int num)
     {
@@ -82,6 +85,26 @@ public class jTPCCTData
 	return terminalDistrict;
     }
 
+    public void setUseStoredProcedures(boolean flag)
+    {
+        useStoredProcedures = flag;
+    }
+
+    public boolean getUseStoredProcedures()
+    {
+        return useStoredProcedures;
+    }
+
+    public void setDBType(int type)
+    {
+        dbType = type;
+    }
+
+    public int getDBType()
+    {
+        return dbType;
+    }
+
     public void execute(Logger log, jTPCCConnection db)
 	throws Exception
     {
@@ -92,7 +115,22 @@ public class jTPCCTData
 	switch (transType)
 	{
 	    case TT_NEW_ORDER:
-		executeNewOrder(log, db);
+		if (useStoredProcedures)
+		{
+		    switch (dbType)
+		    {
+			case jTPCCConfig.DB_POSTGRES:
+			    executeNewOrderStoredProcPostgres(log, db);
+			    break;
+
+		        default:
+			    throw new Exception("Stored Procedure for NEW_ORDER not implemented");
+		    }
+		}
+		else
+		{
+		    executeNewOrder(log, db);
+		}
 		break;
 
 	    case TT_PAYMENT:
@@ -281,7 +319,7 @@ public class jTPCCTData
 	    transRbk = true;
 	}
 
-	// Zero out remainint lines
+	// Zero out the remaining lines
 	while (i < 15)
 	{
 	    newOrder.ol_i_id[i]         = 0;
@@ -518,7 +556,7 @@ public class jTPCCTData
 		insertOrderLineBatch.setInt(1, o_id);
 		insertOrderLineBatch.setInt(2, newOrder.d_id);
 		insertOrderLineBatch.setInt(3, newOrder.w_id);
-		insertOrderLineBatch.setInt(4, ol_number);
+		insertOrderLineBatch.setInt(4, seq + 1);
 		insertOrderLineBatch.setInt(5, newOrder.ol_i_id[seq]);
 		insertOrderLineBatch.setInt(6, newOrder.ol_supply_w_id[seq]);
 		insertOrderLineBatch.setInt(7, newOrder.ol_quantity[seq]);
@@ -597,6 +635,118 @@ public class jTPCCTData
 	    {
 		db.stmtNewOrderUpdateStock.clearBatch();
 		db.stmtNewOrderInsertOrderLine.clearBatch();
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+				se2.getMessage());
+	    }
+	    throw e;
+	}
+	/*
+	log.info("Reached the point of creating one NEW_ORDER W_ID "+newOrder.w_id+" D_ID "+newOrder.d_id+" C_ID "+newOrder.c_id);
+	System.exit(0);
+	*/
+    }
+
+    private void executeNewOrderStoredProcPostgres(Logger log, jTPCCConnection db)
+	throws Exception
+    {
+	PreparedStatement       stmt;
+	ResultSet               rs;
+	Connection		conn = db.getConnection();
+
+	Integer[] ol_supply_w_id = new Integer[15];
+	Integer[] ol_i_id = new Integer[15];
+	Integer[] ol_quantity = new Integer[15];
+
+	for (int i = 0; i < 15; i++)
+	{
+	    ol_supply_w_id[i] = newOrder.ol_supply_w_id[i];
+	    ol_i_id[i] = newOrder.ol_i_id[i];
+	    ol_quantity[i] = newOrder.ol_quantity[i];
+	}
+
+	try {
+	    // Execute the stored procedure for NEW_ORDER
+	    stmt = db.stmtNewOrderStoredProc;
+	    stmt.setInt(1, newOrder.w_id);
+	    stmt.setInt(2, newOrder.d_id);
+	    stmt.setInt(3, newOrder.c_id);
+	    stmt.setArray(4, conn.createArrayOf("integer", ol_supply_w_id));
+	    stmt.setArray(5, conn.createArrayOf("integer", ol_i_id));
+	    stmt.setArray(6, conn.createArrayOf("integer", ol_quantity));
+	    rs = stmt.executeQuery();
+
+	    // The stored proc succeeded. Extract the results.
+	    rs.next();
+
+	    newOrder.w_tax      = rs.getDouble("out_w_tax");
+	    newOrder.d_tax      = rs.getDouble("out_d_tax");
+	    newOrder.o_id       = rs.getInt("out_o_id");
+	    newOrder.o_entry_d  = rs.getTimestamp("out_o_entry_d").toString();
+	    newOrder.o_ol_cnt   = rs.getInt("out_ol_cnt");
+	    newOrder.total_amount = rs.getDouble("out_total_amount");
+	    newOrder.c_last     = rs.getString("out_c_last");
+	    newOrder.c_credit   = rs.getString("out_c_credit");
+	    newOrder.c_discount = rs.getDouble("out_c_discount");
+
+	    Array arr_ol_amount = rs.getArray("out_ol_amount");
+	    Array arr_i_name    = rs.getArray("out_i_name");
+	    Array arr_i_price   = rs.getArray("out_i_price");
+	    Array arr_s_quantity = rs.getArray("out_s_quantity");
+	    Array arr_bg        = rs.getArray("out_brand_generic");
+	    BigDecimal[] ol_amount  = (BigDecimal[])arr_ol_amount.getArray();
+	    String[] i_name     = (String[])arr_i_name.getArray();
+	    BigDecimal[] i_price    = (BigDecimal[])arr_i_price.getArray();
+	    Integer[] s_quantity = (Integer[])arr_s_quantity.getArray();
+	    String[] bg         = (String[])arr_bg.getArray();
+
+	    for (int i = 0; i < ol_amount.length; i++)
+	    {
+		newOrder.ol_amount[i]     = ol_amount[i].doubleValue();
+		newOrder.i_name[i]        = i_name[i];
+		newOrder.i_price[i]       = i_price[i].doubleValue();
+		newOrder.s_quantity[i]    = s_quantity[i];
+		newOrder.brand_generic[i] = bg[i];
+	    }
+
+	    newOrder.execution_status = new String("Order placed");
+
+	    rs.close();
+	    db.commit();
+	}
+	catch (SQLException se)
+	{
+	    if (transRbk && se.getMessage().equals("ERROR: Item number is not valid"))
+	    {
+		newOrder.execution_status = new String(
+				"Item number is not valid");
+	    }
+	    else
+	    {
+		log.error("Unexpected SQLException in NEW_ORDER");
+		log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
+		for (SQLException x = se; x != null; x = x.getNextException())
+		    log.error(x.getMessage());
+		se.printStackTrace();
+	    }
+
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+				se2.getMessage());
+	    }
+	}
+	catch (Exception e)
+	{
+	    try
+	    {
 		db.rollback();
 	    }
 	    catch (SQLException se2)

@@ -11,7 +11,7 @@ import java.text.*;
 
 public interface jTPCCConfig
 {
-    public final static String JTPCCVERSION = "5.0devel";
+    public final static String JTPCCVERSION = "5.1devel";
 
     public final static int     DB_UNKNOWN = 0,
 				DB_FIREBIRD = 1,

@@ -750,7 +750,7 @@ public class jTPCC implements jTPCCConfig
 	    fmt.format("    Memory Usage: %dMB / %dMB          ", (totalMem - freeMem), totalMem);
 
 	    System.out.print(informativeText);
-	    for (int count = 0; count < 1+informativeText.length(); count++)
+	    for (int count = 0; count < informativeText.length(); count++)
 		System.out.print("\b");
 	}
     }

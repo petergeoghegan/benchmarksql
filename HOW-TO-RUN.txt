@@ -127,7 +127,7 @@ Instructions for running BenchmarkSQL on PostgreSQL
 
 5. Run the configured benchmark
 
-    [wieck@localhost run]$ ./runDatabaseBuild.sh my_postgres.properties
+    [wieck@localhost run]$ ./runBenchmark.sh my_postgres.properties
 
     The benchmark should run for the number of configured concurrent
     connections (terminals) and the duration or number of transactions.

@@ -60,6 +60,15 @@ public class jTPCC implements jTPCCConfig
 	return(prop);
     }
 
+    private String getProp (Properties p, String pName, String defVal)
+    {
+	String prop =  p.getProperty(pName);
+	if (prop == null)
+	    prop = defVal;
+	log.info("Term-00, " + pName + "=" + prop);
+	return(prop);
+    }
+
     public jTPCC()
     {
 
@@ -102,11 +111,12 @@ public class jTPCC implements jTPCCConfig
 	String  limPerMin           = getProp(ini,"limitTxnsPerMin");
 	String  iTermWhseFixed          = getProp(ini,"terminalWarehouseFixed");
 	log.info("Term-00, ");
-	String  iNewOrderWeight     = getProp(ini,"newOrderWeight");
-	String  iPaymentWeight      = getProp(ini,"paymentWeight");
-	String  iOrderStatusWeight  = getProp(ini,"orderStatusWeight");
-	String  iDeliveryWeight     = getProp(ini,"deliveryWeight");
-	String  iStockLevelWeight   = getProp(ini,"stockLevelWeight");
+
+	String  iNewOrderWeight     = getProp(ini,"newOrderWeight", "43.47826");
+	String  iPaymentWeight      = getProp(ini,"paymentWeight", "43.47826");
+	String  iOrderStatusWeight  = getProp(ini,"orderStatusWeight", "4.347827");
+	String  iDeliveryWeight     = getProp(ini,"deliveryWeight", "4.347826");
+	String  iStockLevelWeight   = getProp(ini,"stockLevelWeight", "4.347827");
 
 	log.info("Term-00, ");
 	String  resultDirectory     = getProp(ini, "resultDirectory");
@@ -269,7 +279,11 @@ public class jTPCC implements jTPCCConfig
 		int transactionsPerTerminal = -1;
 		int numWarehouses = -1;
 		int loadWarehouses = -1;
-		int newOrderWeightValue = -1, paymentWeightValue = -1, orderStatusWeightValue = -1, deliveryWeightValue = -1, stockLevelWeightValue = -1;
+		double newOrderWeightValue = 43.47826;
+		double paymentWeightValue = 43.47826;
+		double orderStatusWeightValue = 4.347827;
+		double deliveryWeightValue = 4.347826;
+		double stockLevelWeightValue = 4.347827;
 		long executionTimeMillis = -1;
 		boolean terminalWarehouseFixed = true;
 		long CLoad;
@@ -406,11 +420,11 @@ public class jTPCC implements jTPCCConfig
 
 		try
 		{
-		    newOrderWeightValue = Integer.parseInt(iNewOrderWeight);
-		    paymentWeightValue = Integer.parseInt(iPaymentWeight);
-		    orderStatusWeightValue = Integer.parseInt(iOrderStatusWeight);
-		    deliveryWeightValue = Integer.parseInt(iDeliveryWeight);
-		    stockLevelWeightValue = Integer.parseInt(iStockLevelWeight);
+		    newOrderWeightValue = Double.parseDouble(iNewOrderWeight);
+		    paymentWeightValue = Double.parseDouble(iPaymentWeight);
+		    orderStatusWeightValue = Double.parseDouble(iOrderStatusWeight);
+		    deliveryWeightValue = Double.parseDouble(iDeliveryWeight);
+		    stockLevelWeightValue = Double.parseDouble(iStockLevelWeight);
 
 		    if(newOrderWeightValue < 0 ||paymentWeightValue < 0 || orderStatusWeightValue < 0 || deliveryWeightValue < 0 || stockLevelWeightValue < 0)
 			throw new NumberFormatException();
@@ -423,9 +437,11 @@ public class jTPCC implements jTPCCConfig
 		    throw new Exception();
 		}
 
-		if(newOrderWeightValue + paymentWeightValue + orderStatusWeightValue + deliveryWeightValue + stockLevelWeightValue > 100)
+		double sumWeight = newOrderWeightValue + paymentWeightValue + orderStatusWeightValue + deliveryWeightValue + stockLevelWeightValue;
+		sumWeight = Math.round(sumWeight * 100.0) / 100.0;
+		if(sumWeight != 100.0)
 		{
-		    errorMessage("Sum of mix percentage parameters exceeds 100%!");
+		    errorMessage("Sum of mix percentage parameters must equal 100%! Have %f" + sumWeight);
 		    throw new Exception();
 		}
 

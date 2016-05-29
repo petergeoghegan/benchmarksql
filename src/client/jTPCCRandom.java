@@ -176,6 +176,16 @@ public class jTPCCRandom
     }
 
     /*
+     * nextDouble(x, y)
+     *
+     *     Produce double random number uniformly distributed in [x .. y]
+     */
+    public double nextDouble(double x, double y)
+    {
+        return random.nextDouble() * (y - x) + x;
+    }
+
+    /*
      * nextLong(x, y)
      *
      *     Produce a random number uniformly distributed in [x .. y]

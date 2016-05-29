@@ -26,7 +26,11 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
     private ResultSet rs = null;
     private int terminalWarehouseID, terminalDistrictID;
     private boolean terminalWarehouseFixed;
-    private int paymentWeight, orderStatusWeight, deliveryWeight, stockLevelWeight, limPerMin_Terminal;
+    private double paymentWeight;
+    private double orderStatusWeight;
+    private double deliveryWeight;
+    private double stockLevelWeight;
+    private int limPerMin_Terminal;
     private jTPCC parent;
     private jTPCCRandom rnd;
 
@@ -49,8 +53,9 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
       (String terminalName, int terminalWarehouseID, int terminalDistrictID,
        Connection conn, int dbType,
        int numTransactions, boolean terminalWarehouseFixed,
-       int paymentWeight, int orderStatusWeight,
-       int deliveryWeight, int stockLevelWeight, int numWarehouses, int limPerMin_Terminal, jTPCC parent) throws SQLException
+       double paymentWeight, double orderStatusWeight,
+       double deliveryWeight, double stockLevelWeight,
+       int numWarehouses, int limPerMin_Terminal, jTPCC parent) throws SQLException
     {
 	this.terminalName = terminalName;
 	this.conn = conn;
@@ -127,7 +132,7 @@ public class jTPCCTerminal implements jTPCCConfig, Runnable
 	for(int i = 0; (i < numTransactions || numTransactions == -1) && !stopRunning; i++)
 	{
 
-	    long transactionType = rnd.nextLong(1, 100);
+	    double transactionType = rnd.nextDouble(0.0, 100.0);
 	    int skippedDeliveries = 0, newOrder = 0;
 	    String transactionTypeName;
 

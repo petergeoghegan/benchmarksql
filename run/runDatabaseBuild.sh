@@ -13,7 +13,7 @@ if [ ! -f "${PROPS}" ] ; then
 fi
 DB="$(grep '^db=' $PROPS | sed -e 's/^db=//')"
 
-BEFORE_LOAD="tableCreates"
+BEFORE_LOAD="tableCreates extraCommandsBeforeLoad"
 AFTER_LOAD="indexCreates foreignKeys extraHistID buildFinish"
 
 for step in ${BEFORE_LOAD} ; do

@@ -50,7 +50,7 @@ Instructions for running BenchmarkSQL on PostgreSQL
     the copy to match your system setup and desired scaling.
 
     [wieck@localhost benchmarksql] $ cd run
-    [wieck@localhost run] $ cp props.pg my_postgres.properties
+    [wieck@localhost run] $ cp sample.postgresql.properties my_postgres.properties
     [wieck@localhost run] $ vi my_postgres.properties
     [wieck@localhost run] $
 

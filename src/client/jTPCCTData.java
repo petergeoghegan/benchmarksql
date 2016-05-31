@@ -142,7 +142,23 @@ public class jTPCCTData
 		break;
 
 	    case TT_STOCK_LEVEL:
-		executeStockLevel(log, db);
+	    if (useStoredProcedures)
+		{
+		    switch (dbType)
+		    {
+			case jTPCCConfig.DB_POSTGRES:
+			    executeStockLevelStoredProcPostgres(log, db);
+			    break;
+
+		        default:
+			    throw new Exception("Stored Procedure for STOCK_LEVEL not implemented");
+		    }
+		}
+		else
+		{
+		    executeStockLevel(log, db);
+		}
+
 		break;
 
 	    case TT_DELIVERY:
@@ -1568,6 +1584,63 @@ log.trace("w_zip=" + payment.w_zip + " d_zip=" + payment.d_zip);
 	    }
 	    throw e;
 	}
+    }
+
+    private void executeStockLevelStoredProcPostgres(Logger log, jTPCCConnection db)
+    throws Exception
+    {
+    PreparedStatement	    stmt;
+    ResultSet		    rs;
+    Connection	    conn = db.getConnection();
+
+    try {
+	// Execute the stored procedure for STOCK_LEVEL
+	stmt=db.stmtStockLevelStoredProc;
+	stmt.setInt(1,stockLevel.w_id);
+	stmt.setInt(2,stockLevel.d_id);
+	stmt.setInt(3,stockLevel.threshold);
+	rs = stmt.executeQuery();
+
+	//The stored proc succeeded. Extract the results.
+	rs.next();
+
+	stockLevel.low_stock=rs.getInt("out_low_stock");
+
+	rs.close();
+	db.commit();
+    }
+    catch (SQLException se)
+    {
+
+	log.error("Unexpected SQLException in NEW_ORDER");
+	log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
+	for (SQLException x = se; x != null; x = x.getNextException())
+	    log.error(x.getMessage());
+	se.printStackTrace();
+
+	try
+	{
+	    db.rollback();
+	}
+	catch (SQLException se2)
+	{
+	    throw new Exception("Unexpected SQLException on rollback: " +
+		    se2.getMessage());
+	}
+    }
+    catch (Exception e)
+    {
+	try
+	{
+	    db.rollback();
+	}
+	catch (SQLException se2)
+	{
+	    throw new Exception("Unexpected SQLException on rollback: " +
+		    se2.getMessage());
+	}
+	throw e;
+    }
     }
 
     private void traceStockLevel(Logger log, Formatter fmt[])

@@ -46,6 +46,7 @@ public class jTPCCConnection
     public PreparedStatement    stmtOrderStatusSelectOrderLine;
 
     public PreparedStatement    stmtStockLevelSelectLow;
+    public PreparedStatement    stmtStockLevelStoredProc;
 
     public PreparedStatement    stmtDeliveryBGSelectOldestNewOrder;
     public PreparedStatement    stmtDeliveryBGDeleteOldestNewOrder;
@@ -233,6 +234,13 @@ public class jTPCCConnection
 		    "        ) " +
 		    "    )");
 		break;
+	}
+
+	switch (dbType)
+	{
+	    case jTPCCConfig.DB_POSTGRES:
+		stmtStockLevelStoredProc = dbConn.prepareStatement(
+		    "SELECT * FROM bmsql_proc_stock_level (?, ?, ?)");
 	}
 
 	// PreparedStatements for DELIVERY_BG

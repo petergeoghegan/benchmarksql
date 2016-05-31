@@ -28,7 +28,7 @@
 
   <target name="dist" depends="compile" >
     <mkdir dir="${dist}"/>
-    <jar jarfile="${dist}/BenchmarkSQL-5.0.jar" basedir="${build}"/>
+    <jar jarfile="${dist}/BenchmarkSQL-5.1.jar" basedir="${build}"/>
   </target>
 
   <target name="clean" description="clean up" >

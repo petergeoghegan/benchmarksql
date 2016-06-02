@@ -1,3 +1,45 @@
+CREATE OR REPLACE FUNCTION bmsql_cid_from_clast(
+	in_c_w_id integer,
+	in_c_d_id integer,
+	in_c_last varchar(16))
+RETURNS integer AS
+$$
+DECLARE
+    cust_cursor CURSOR (
+    		p_w_id integer, p_d_id integer, p_c_last varchar(16))
+	FOR
+    	SELECT c_id FROM bmsql_customer
+	    WHERE c_w_id = p_w_id
+	      AND c_d_id = p_d_id
+	      AND c_last = p_c_last
+	    ORDER BY c_first;
+    num_cust integer;
+    idx_cust integer;
+    ret_c_id integer;
+BEGIN
+    -- Clause 2.5.2.2 Case 2, customer selected based on c_last.
+    SELECT INTO num_cust count(*) 
+    	FROM bmsql_customer
+	WHERE c_w_id = in_c_w_id
+	  AND c_d_id = in_c_d_id
+	  AND c_last = in_c_last;
+    IF num_cust = 0 THEN
+        RAISE EXCEPTION 'Customer(s) for C_W_ID=% C_D_ID=% C_LAST=% not found',
+		in_c_w_id, in_c_d_id, in_c_last;
+    END IF;
+    idx_cust = (num_cust + 1) / 2 - 1;
+
+    OPEN cust_cursor(in_c_w_id, in_c_d_id, in_c_last);
+    MOVE FORWARD idx_cust IN cust_cursor;
+    FETCH FROM cust_cursor INTO ret_c_id;
+    CLOSE cust_cursor;
+
+    RETURN ret_c_id;
+END;
+$$
+LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION bmsql_proc_new_order(
     IN in_w_id integer,
     IN in_d_id integer,

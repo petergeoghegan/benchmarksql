@@ -134,7 +134,22 @@ public class jTPCCTData
 		break;
 
 	    case TT_PAYMENT:
-		executePayment(log, db);
+		if (useStoredProcedures)
+		{
+		    switch (dbType)
+		    {
+			case jTPCCConfig.DB_POSTGRES:
+			    executePaymentStoredProcPostgres(log, db);
+			    break;
+
+			default:
+			    throw new Exception("Stored Procedure for PAYMENT not implemented");
+		    }
+		}
+		else
+		{
+		    executePayment(log, db);
+		}
 		break;
 
 	    case TT_ORDER_STATUS:
@@ -142,7 +157,7 @@ public class jTPCCTData
 		break;
 
 	    case TT_STOCK_LEVEL:
-	    if (useStoredProcedures)
+		if (useStoredProcedures)
 		{
 		    switch (dbType)
 		    {
@@ -150,7 +165,7 @@ public class jTPCCTData
 			    executeStockLevelStoredProcPostgres(log, db);
 			    break;
 
-		        default:
+			default:
 			    throw new Exception("Stored Procedure for STOCK_LEVEL not implemented");
 		    }
 		}
@@ -1130,6 +1145,92 @@ public class jTPCCTData
 	}
     }
 
+    private void executePaymentStoredProcPostgres(Logger log, jTPCCConnection db)
+	throws Exception
+    {
+	PreparedStatement	stmt;
+	ResultSet		rs;
+	Connection 		conn = db.getConnection();
+
+	try
+	{
+	    stmt = db.stmtPaymentStoredProc;
+	    stmt.setInt(1, payment.w_id);
+	    stmt.setInt(2, payment.d_id);
+	    stmt.setInt(3, payment.c_id);
+	    stmt.setInt(4, payment.c_d_id);
+	    stmt.setInt(5, payment.c_w_id);
+	    stmt.setString(6, payment.c_last);
+	    stmt.setBigDecimal(7, new BigDecimal(payment.h_amount));
+	    rs = stmt.executeQuery();
+
+	    //The stored proc succeeded. Extract the results.
+	    rs.next();
+
+	    payment.w_name = rs.getString("out_w_name");
+	    payment.w_street_1 = rs.getString("out_w_street_1");
+	    payment.w_street_2 = rs.getString("out_w_street_2");
+	    payment.w_city = rs.getString("out_w_city");
+	    payment.w_state = rs.getString("out_w_state");
+	    payment.w_zip = rs.getString("out_w_zip");
+	    payment.d_name = rs.getString("out_d_name");
+	    payment.d_street_1 = rs.getString("out_d_street_1");
+	    payment.d_street_2 = rs.getString("out_d_street_2");
+	    payment.d_city = rs.getString("out_d_city");
+	    payment.d_state = rs.getString("out_d_state");
+	    payment.d_zip = rs.getString("out_d_zip");
+	    payment.c_id = rs.getInt("in_c_id");
+	    payment.c_first = rs.getString("out_c_first");
+	    payment.c_middle = rs.getString("out_c_middle");
+	    payment.c_street_1 = rs.getString("out_c_street_1");
+	    payment.c_street_2 = rs.getString("out_c_street_2");
+	    payment.c_city = rs.getString("out_c_city");
+	    payment.c_state = rs.getString("out_c_state");
+	    payment.c_zip = rs.getString("out_c_zip");
+	    payment.c_phone = rs.getString("out_c_phone");
+	    payment.c_since = rs.getTimestamp("out_c_since").toString();
+	    payment.c_credit = rs.getString("out_c_credit");
+	    payment.c_credit_lim = rs.getDouble("out_c_credit_lim");
+	    payment.c_discount = rs.getDouble("out_c_discount");
+	    payment.c_balance = rs.getDouble("out_c_balance");
+	    payment.c_data = rs.getString("out_c_data");
+	    payment.h_date = rs.getTimestamp("out_h_date").toString();
+
+	    rs.close();
+	    db.commit();
+	}
+	catch (SQLException se)
+	{
+	    log.error("Unexpected SQLException in PAYMENT");
+	    log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
+	    for (SQLException x = se; x != null; x = x.getNextException())
+		log.error(x.getMessage());
+	    se.printStackTrace();
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+				se2.getMessage());
+	    }
+	}
+	catch (Exception e)
+	{
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+				se2.getMessage());
+	    }
+	    throw e;
+	}
+    }
+
     private void tracePayment(Logger log, Formatter fmt[])
     {
 	fmt[0].format("                                     Payment");
@@ -1178,7 +1279,6 @@ public class jTPCCTData
 			  payment.w_zip.substring(0, 5), payment.w_zip.substring(5, 9),
 			  payment.d_city, payment.d_state,
 			  payment.d_zip.substring(0, 5), payment.d_zip.substring(5, 9));
-log.trace("w_zip=" + payment.w_zip + " d_zip=" + payment.d_zip);
 
 	    fmt[8].format("Customer: %4d  Cust-Warehouse: %6d  Cust-District: %2d",
 			  payment.c_id, payment.c_w_id, payment.c_d_id);

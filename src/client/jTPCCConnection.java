@@ -26,7 +26,6 @@ public class jTPCCConnection
     public PreparedStatement    stmtNewOrderSelectItem;
     public PreparedStatement    stmtNewOrderUpdateStock;
     public PreparedStatement    stmtNewOrderInsertOrderLine;
-
     public PreparedStatement	stmtNewOrderStoredProc;
 
     public PreparedStatement    stmtPaymentSelectWarehouse;
@@ -39,6 +38,7 @@ public class jTPCCConnection
     public PreparedStatement    stmtPaymentUpdateCustomer;
     public PreparedStatement    stmtPaymentUpdateCustomerWithData;
     public PreparedStatement    stmtPaymentInsertHistory;
+    public PreparedStatement 	stmtPaymentStoredProc;
 
     public PreparedStatement    stmtOrderStatusSelectCustomerListByLast;
     public PreparedStatement    stmtOrderStatusSelectCustomer;
@@ -171,6 +171,13 @@ public class jTPCCConnection
 		"    h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, " +
 		"    h_date, h_amount, h_data) " +
 		"VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+
+	switch (dbType)
+	{
+	    case jTPCCConfig.DB_POSTGRES:
+		stmtPaymentStoredProc = dbConn.prepareStatement(
+		    "SELECT * FROM bmsql_proc_payment (?, ?, ?, ?, ?, ?, ?)");
+	}
 
 	// PreparedStatements for ORDER_STATUS
 	stmtOrderStatusSelectCustomerListByLast = dbConn.prepareStatement(

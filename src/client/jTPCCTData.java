@@ -1812,6 +1812,8 @@ public class jTPCCTData
 	delivery.deliveryBG = new jTPCCTData();
 	delivery.deliveryBG.generateDeliveryBG(delivery.w_id, now,
 		new java.sql.Timestamp(now).toString(), this);
+	delivery.deliveryBG.setDBType(dbType);
+	delivery.deliveryBG.setUseStoredProcedures(useStoredProcedures);
 	delivery.execution_status = new String("Delivery has been queued");
     }
 

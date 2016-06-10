@@ -277,7 +277,7 @@ BEGIN
 	--Update the DISTRICT
 	UPDATE bmsql_district
 		SET d_ytd = d_ytd + in_h_amount
-	WHERE d_w_id = in_w_id AND d_id = in_d_id;
+		WHERE d_w_id = in_w_id AND d_id = in_d_id;
 
 	--Select the DISTRICT
 	SELECT INTO out_d_name, out_d_street_1, out_d_street_2, 
@@ -365,6 +365,77 @@ $$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION bmsql_proc_order_status(
+    IN in_w_id integer,
+    IN in_d_id integer,
+    INOUT in_c_id integer,
+    IN in_c_last varchar(16),
+    OUT out_c_first varchar(16),
+    OUT out_c_middle char(2),
+    OUT out_c_balance decimal(12,2),
+    OUT out_o_id integer,
+    OUT out_o_entry_d varchar(24),
+    OUT out_o_carrier_id integer,
+    OUT out_ol_supply_w_id integer[],
+    OUT out_ol_i_id integer[],
+    OUT out_ol_quantity integer[],
+    OUT out_ol_amount decimal(12,2)[],
+    OUT out_ol_delivery_d timestamp[]
+) AS
+$$
+DECLARE
+	v_order_line	record;
+	v_ol_idx		integer := 1;
+BEGIN
+    --If C_LAST is given instead of C_ID (60%), determine the C_ID.
+    IF in_c_last IS NOT NULL THEN
+		in_c_id = bmsql_cid_from_clast(in_w_id, in_d_id, in_c_last);
+    END IF;
+
+    --Select the CUSTOMER
+    SELECT INTO out_c_first, out_c_middle, in_c_last, out_c_balance
+			c_first, c_middle, c_last, c_balance
+		FROM bmsql_customer
+		WHERE c_w_id=in_w_id AND c_d_id=in_d_id AND c_id = in_c_id;
+
+    --Select the last ORDER for this customer.
+    SELECT INTO out_o_id, out_o_entry_d, out_o_carrier_id
+			o_id, o_entry_d, coalesce(o_carrier_id, -1)
+		FROM bmsql_oorder
+		WHERE o_w_id = in_w_id AND o_d_id = in_d_id AND o_c_id = in_c_id
+		AND o_id = (
+			SELECT max(o_id)
+				FROM bmsql_oorder
+				WHERE o_w_id = in_w_id AND o_d_id = in_d_id AND o_c_id = in_c_id
+			);
+
+	FOR v_order_line IN SELECT ol_i_id, ol_supply_w_id, ol_quantity,
+				ol_amount, ol_delivery_d
+			FROM bmsql_order_line
+			WHERE ol_w_id = in_w_id AND ol_d_id = in_d_id AND ol_o_id = out_o_id
+			ORDER BY ol_w_id, ol_d_id, ol_o_id, ol_number
+			LOOP
+	    out_ol_i_id[v_ol_idx] = v_order_line.ol_i_id;
+	    out_ol_supply_w_id[v_ol_idx] = v_order_line.ol_supply_w_id;
+	    out_ol_quantity[v_ol_idx] = v_order_line.ol_quantity;
+	    out_ol_amount[v_ol_idx] = v_order_line.ol_amount;
+	    out_ol_delivery_d[v_ol_idx] = v_order_line.ol_delivery_d;
+		v_ol_idx = v_ol_idx + 1;
+	END LOOP;
+
+    WHILE v_ol_idx < 16 LOOP
+		out_ol_i_id[v_ol_idx] = 0;
+		out_ol_supply_w_id[v_ol_idx] = 0;
+		out_ol_quantity[v_ol_idx] = 0;
+		out_ol_amount[v_ol_idx] = 0.0;
+		out_ol_delivery_d[v_ol_idx] = NULL;
+		v_ol_idx = v_ol_idx +1;
+    END LOOP;
+END;
+$$
+Language plpgsql;
+
+
 CREATE OR REPLACE FUNCTION bmsql_proc_stock_level(
     IN in_w_id integer,
     IN in_d_id integer,
@@ -374,19 +445,111 @@ CREATE OR REPLACE FUNCTION bmsql_proc_stock_level(
 $$
 BEGIN
     SELECT INTO out_low_stock
-	count(*) AS low_stock FROM (
-	SELECT s_w_id, s_i_id, s_quantity
-	FROM bmsql_stock
-	WHERE s_w_id = in_w_id AND s_quantity < in_threshold AND s_i_id IN (
-	    SELECT ol_i_id
-		    FROM bmsql_district
-		    JOIN bmsql_order_line ON ol_w_id = d_w_id
-		     AND ol_d_id = d_id
-		     AND ol_o_id >= d_next_o_id - 20
-		     AND ol_o_id < d_next_o_id
-		    WHERE d_w_id = in_w_id AND d_id = in_d_id
-	)
-    ) AS L;
+			count(*) AS low_stock
+		FROM (
+			SELECT s_w_id, s_i_id, s_quantity
+			FROM bmsql_stock
+			WHERE s_w_id = in_w_id AND s_quantity < in_threshold
+			  AND s_i_id IN (
+				SELECT ol_i_id
+					FROM bmsql_district
+					JOIN bmsql_order_line ON ol_w_id = d_w_id
+					 AND ol_d_id = d_id
+					 AND ol_o_id >= d_next_o_id - 20
+					 AND ol_o_id < d_next_o_id
+					WHERE d_w_id = in_w_id AND d_id = in_d_id
+				)
+			) AS L;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION bmsql_proc_delivery_bg(
+	IN in_w_id integer,
+	IN in_o_carrier_id integer,
+	IN in_ol_delivery_d timestamp,
+	OUT out_delivered_o_id integer[]
+) AS
+$$
+DECLARE
+	var_d_id integer;
+	var_o_id integer;
+	var_c_id integer;
+	var_sum_ol_amount decimal(12, 2);
+BEGIN
+	FOR var_d_id IN 1..10 LOOP
+		var_o_id = -1;
+		/*
+		 * Try to find the oldest undelivered order for this
+		 * DISTRICT. There may not be one, which is a case
+		 * that needs to be reported.
+		*/
+		WHILE var_o_id < 0 LOOP
+			SELECT INTO var_o_id
+					no_o_id
+				FROM bmsql_new_order
+			WHERE no_w_id = in_w_id AND no_d_id = var_d_id
+			ORDER BY no_o_id ASC;
+			IF NOT FOUND THEN
+			    var_o_id = -1;
+				EXIT;
+			END IF;
+
+			DELETE FROM bmsql_new_order
+				WHERE no_w_id = in_w_id AND no_d_id = var_d_id
+				  AND no_o_id = var_o_id;
+			IF NOT FOUND THEN
+			    var_o_id = -1;
+			END IF;
+		END LOOP;
+
+		IF var_o_id < 0 THEN
+			-- No undelivered NEW_ORDER found for this District.
+			var_d_id = var_d_id + 1;
+			CONTINUE;
+		END IF;
+
+		/*
+		 * We found out oldert undelivered order for this DISTRICT
+		 * and the NEW_ORDER line has been deleted. Process the
+		 * rest of the DELIVERY_BG.
+		*/
+
+		-- Update the ORDER setting the o_carrier_id.
+		UPDATE bmsql_oorder
+			SET o_carrier_id = in_o_carrier_id
+			WHERE o_w_id = in_w_id AND o_d_id = var_d_id AND o_id = var_o_id;
+
+		-- Get the o_c_id from the ORDER.
+		SELECT INTO var_c_id
+				o_c_id
+			FROM bmsql_oorder
+			WHERE o_w_id = in_w_id AND o_d_id = var_d_id AND o_id = var_o_id;
+
+		-- Update ORDER_LINE setting the ol_delivery_d.
+		UPDATE bmsql_order_line
+			SET ol_delivery_d = in_ol_delivery_d
+			WHERE ol_w_id = in_w_id AND ol_d_id = var_d_id
+			  AND ol_o_id = var_o_id;
+
+		-- SELECT the sum(ol_amount) from ORDER_LINE.
+		SELECT INTO var_sum_ol_amount
+				sum(ol_amount) AS sum_ol_amount
+			FROM bmsql_order_line
+			WHERE ol_w_id = in_w_id AND ol_d_id = var_d_id
+			  AND ol_o_id = var_o_id;
+
+		-- Update the CUSTOMER.
+		UPDATE bmsql_customer
+			SET c_balance = c_balance + var_sum_ol_amount,
+				c_delivery_cnt = c_delivery_cnt + 1
+			WHERE c_w_id = in_w_id AND c_d_id = var_d_id and c_id = var_c_id;
+
+		out_delivered_o_id[var_d_id] = var_o_id;
+
+		var_d_id = var_d_id +1 ;
+	END LOOP;
 END;
 $$
 LANGUAGE plpgsql;

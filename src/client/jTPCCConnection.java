@@ -44,6 +44,7 @@ public class jTPCCConnection
     public PreparedStatement    stmtOrderStatusSelectCustomer;
     public PreparedStatement    stmtOrderStatusSelectLastOrder;
     public PreparedStatement    stmtOrderStatusSelectOrderLine;
+    public PreparedStatement	stmtOrderStatusStoredProc;
 
     public PreparedStatement    stmtStockLevelSelectLow;
     public PreparedStatement    stmtStockLevelStoredProc;
@@ -55,6 +56,7 @@ public class jTPCCConnection
     public PreparedStatement    stmtDeliveryBGSelectSumOLAmount;
     public PreparedStatement    stmtDeliveryBGUpdateOrderLine;
     public PreparedStatement    stmtDeliveryBGUpdateCustomer;
+	public PreparedStatement	stmtDeliveryBGStoredProc;
 
     public jTPCCConnection(Connection dbConn, int dbType)
 	throws SQLException
@@ -205,6 +207,13 @@ public class jTPCCConnection
 		"    WHERE ol_w_id = ? AND ol_d_id = ? AND ol_o_id = ? " +
 		"    ORDER BY ol_w_id, ol_d_id, ol_o_id, ol_number");
 
+	switch(dbType)
+	{
+	    case jTPCCConfig.DB_POSTGRES:
+		stmtOrderStatusStoredProc = dbConn.prepareStatement(
+		    "SELECT * FROM bmsql_proc_order_status (?, ?, ?, ?)");
+	}
+
 	// PreparedStatements for STOCK_LEVEL
 	switch (dbType)
 	{
@@ -280,7 +289,15 @@ public class jTPCCConnection
 		"    SET c_balance = c_balance + ?, " +
 		"        c_delivery_cnt = c_delivery_cnt + 1 " +
 		"    WHERE c_w_id = ? AND c_d_id = ? AND c_id = ?");
+	switch (dbType)
+	{
+		case jTPCCConfig.DB_POSTGRES:
+		stmtDeliveryBGStoredProc = dbConn.prepareStatement(
+			"SELECT * FROM bmsql_proc_delivery_bg(?, ?, ?)");
+	}
+
     }
+
 
     public jTPCCConnection(String connURL, Properties connProps, int dbType)
 	throws SQLException

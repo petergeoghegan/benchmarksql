@@ -153,7 +153,22 @@ public class jTPCCTData
 		break;
 
 	    case TT_ORDER_STATUS:
-		executeOrderStatus(log, db);
+		if (useStoredProcedures)
+		{
+		    switch (dbType)
+		    {
+			case jTPCCConfig.DB_POSTGRES:
+			    executeOrderStatusStoredProcPostgres(log, db);
+			    break;
+
+			default:
+			    throw new Exception("Stored Procedure for ORDER_STATUS not implemented");
+		    }
+		}
+		else
+		{
+		    executeOrderStatus(log, db);
+		}
 		break;
 
 	    case TT_STOCK_LEVEL:
@@ -181,7 +196,23 @@ public class jTPCCTData
 		break;
 
 	    case TT_DELIVERY_BG:
-		executeDeliveryBG(log, db);
+		if (useStoredProcedures)
+		{
+		    switch (dbType)
+		    {
+		    case jTPCCConfig.DB_POSTGRES:
+			executeDeliveryBGStoredProcPostgres(log, db);
+			break;
+
+		    default:
+			throw new Exception("Stored Procedure for DELIVERY_BG not implemented");
+		    }
+		}
+		else
+		{
+		    executeDeliveryBG(log, db);
+		}
+
 		break;
 
 	    default:
@@ -1530,6 +1561,93 @@ public class jTPCCTData
 	}
     }
 
+    private void executeOrderStatusStoredProcPostgres(Logger log, jTPCCConnection db)
+    throws Exception
+    {
+	PreparedStatement		stmt;
+	ResultSet			rs;
+	Connection	    conn = db.getConnection();
+
+	try
+	{
+	    //Execute the stored procedure for ORDER_STATUS
+	    stmt = db.stmtOrderStatusStoredProc;
+	    stmt.setInt(1, orderStatus.w_id);
+	    stmt.setInt(2, orderStatus.d_id);
+	    stmt.setInt(3, orderStatus.c_id);
+	    stmt.setString(4, orderStatus.c_last);
+	    rs=stmt.executeQuery();
+
+	    //The stored proc succeeded Extract the results.
+	    rs .next();
+
+	    orderStatus.c_first = rs.getString("out_c_first");
+	    orderStatus.c_middle = rs.getString("out_c_middle");
+	    orderStatus.c_balance = rs.getDouble("out_c_balance");
+	    orderStatus.o_id = rs.getInt("out_o_id");
+	    orderStatus.o_entry_d = rs.getTimestamp("out_o_entry_d").toString();
+	    orderStatus.o_carrier_id = rs.getInt("out_o_carrier_id");
+	    orderStatus.c_id = rs.getInt("in_c_id");
+	    Array arr_ol_supply_w_id = rs.getArray("out_ol_supply_w_id");
+	    Array arr_ol_i_id = rs.getArray("out_ol_i_id");
+	    Array arr_ol_quantity = rs.getArray("out_ol_quantity");
+	    Array arr_ol_amount = rs.getArray("out_ol_amount");
+	    Array arr_ol_delivery_d = rs.getArray("out_ol_delivery_d");
+	    Integer[] ol_i_id = (Integer[]) arr_ol_i_id.getArray();
+	    Integer[] ol_supply_w_id = (Integer[]) arr_ol_supply_w_id.getArray();
+	    Integer[] ol_quantity = (Integer[]) arr_ol_quantity.getArray();
+	    BigDecimal[] ol_amount = (BigDecimal[]) arr_ol_amount.getArray();
+	    Timestamp[] ol_delivery_x = (Timestamp[]) arr_ol_delivery_d.getArray();
+
+	    for (int i = 0; i < ol_amount.length; i++)
+	    {
+		orderStatus.ol_supply_w_id[i] = ol_supply_w_id[i];
+		orderStatus.ol_i_id[i] = ol_i_id[i];
+		orderStatus.ol_quantity[i] = ol_quantity[i];
+		orderStatus.ol_amount[i] = ol_amount[i].doubleValue();
+		if (ol_delivery_x[i] == null)
+		    orderStatus.ol_delivery_d[i] = " ";
+		else
+		    orderStatus.ol_delivery_d[i] = ol_delivery_x[i].toString();
+	    }
+
+	    rs.close();
+	    db.commit();
+
+	}
+	catch (SQLException se)
+	{
+	    log.error("Unexpected SQLException in ORDER_STATUS");
+	    log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
+	    for (SQLException x = se; x != null; x = x.getNextException())
+		log.error(x.getMessage());
+	    se.printStackTrace();
+
+	    try
+	    {
+		db.rollback();
+	    }
+		catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+		se2.getMessage());
+	    }
+	}
+	catch (Exception e)
+	{
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+		se2.getMessage());
+	    }
+	    throw e;
+	}
+    }
+
     private void traceOrderStatus(Logger log, Formatter fmt[])
     {
 	fmt[0].format("                                  Order Status");
@@ -1689,58 +1807,58 @@ public class jTPCCTData
     private void executeStockLevelStoredProcPostgres(Logger log, jTPCCConnection db)
     throws Exception
     {
-    PreparedStatement	    stmt;
-    ResultSet		    rs;
-    Connection	    conn = db.getConnection();
+	PreparedStatement		stmt;
+	ResultSet			rs;
+	Connection	  		conn = db.getConnection();
 
-    try {
-	// Execute the stored procedure for STOCK_LEVEL
-	stmt=db.stmtStockLevelStoredProc;
-	stmt.setInt(1,stockLevel.w_id);
-	stmt.setInt(2,stockLevel.d_id);
-	stmt.setInt(3,stockLevel.threshold);
-	rs = stmt.executeQuery();
+	try {
+	    // Execute the stored procedure for STOCK_LEVEL
+	    stmt=db.stmtStockLevelStoredProc;
+	    stmt.setInt(1,stockLevel.w_id);
+	    stmt.setInt(2,stockLevel.d_id);
+	    stmt.setInt(3,stockLevel.threshold);
+	    rs = stmt.executeQuery();
 
-	//The stored proc succeeded. Extract the results.
-	rs.next();
+	    //The stored proc succeeded. Extract the results.
+	    rs.next();
 
-	stockLevel.low_stock=rs.getInt("out_low_stock");
+	    stockLevel.low_stock=rs.getInt("out_low_stock");
 
-	rs.close();
-	db.commit();
-    }
-    catch (SQLException se)
-    {
-
-	log.error("Unexpected SQLException in NEW_ORDER");
-	log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
-	for (SQLException x = se; x != null; x = x.getNextException())
-	    log.error(x.getMessage());
-	se.printStackTrace();
-
-	try
-	{
-	    db.rollback();
+	    rs.close();
+	    db.commit();
 	}
-	catch (SQLException se2)
+	catch (SQLException se)
 	{
-	    throw new Exception("Unexpected SQLException on rollback: " +
-		    se2.getMessage());
+
+	    log.error("Unexpected SQLException in NEW_ORDER");
+	    log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
+	    for (SQLException x = se; x != null; x = x.getNextException())
+		log.error(x.getMessage());
+	    se.printStackTrace();
+
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+			se2.getMessage());
+	    }
 	}
-    }
-    catch (Exception e)
-    {
-	try
+	catch (Exception e)
 	{
-	    db.rollback();
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+			se2.getMessage());
+	    }
+	    throw e;
 	}
-	catch (SQLException se2)
-	{
-	    throw new Exception("Unexpected SQLException on rollback: " +
-		    se2.getMessage());
-	}
-	throw e;
-    }
     }
 
     private void traceStockLevel(Logger log, Formatter fmt[])
@@ -2066,6 +2184,66 @@ public class jTPCCTData
 	    {
 		throw new Exception("Unexpected SQLException on rollback: " +
 				se2.getMessage());
+	    }
+	    throw e;
+	}
+    }
+
+    private void executeDeliveryBGStoredProcPostgres(Logger log, jTPCCConnection db)
+    throws Exception
+    {
+	PreparedStatement	stmt;
+	ResultSet		rs;
+	Connection		conn = db.getConnection();
+
+	try
+	{
+	    // Execute the stored procedure for STOCK_LEVEL
+	    stmt = db.stmtDeliveryBGStoredProc;
+	    stmt.setInt(1, deliveryBG.w_id);
+	    stmt.setInt(2, deliveryBG.o_carrier_id);
+	    stmt.setTimestamp(3, Timestamp.valueOf(deliveryBG.ol_delivery_d));
+	    rs = stmt.executeQuery();
+
+	    // The stored proc succeeded. Extract the results.
+	    rs.next();
+
+	    Array arr_delivered_o_id = rs.getArray("out_delivered_o_id");
+	    Integer [] delivered_o_id = (Integer[]) arr_delivered_o_id.getArray();
+
+	    for (int i = 0; i < delivered_o_id.length; i++)
+		deliveryBG.delivered_o_id[i] = delivered_o_id[i];
+
+	    rs.close();
+	    db.commit();
+	}
+	catch (SQLException se)
+	{
+	    log.error("Unexpected SQLException in DELIVERY_BG");
+	    log.error("message: '" + se.getMessage() + "' transRbk=" + transRbk);
+	    for (SQLException x = se; x != null; x = x.getNextException())
+		log.error(x.getMessage());
+	    se.printStackTrace();
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+			se2.getMessage());
+	    }
+	}
+	catch (Exception e)
+	{
+	    try
+	    {
+		db.rollback();
+	    }
+	    catch (SQLException se2)
+	    {
+		throw new Exception("Unexpected SQLException on rollback: " +
+			se2.getMessage());
 	    }
 	    throw e;
 	}

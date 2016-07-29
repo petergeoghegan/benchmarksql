@@ -17,9 +17,9 @@ USER="$(grep '^user=' $PROPS | sed -e 's/^user=//' )"
 PASSWORD="$(grep '^password=' $PROPS | sed -e 's/^password=//' )"
 
 if [ $DB == "oracle" ] ; then
-BEFORE_LOAD="tableCreates extraCommandsBeforeLoad"
+    BEFORE_LOAD="tableCreates extraCommandsBeforeLoad"
 else
-BEFORE_LOAD="tableCreates extraCommandsBeforeLoad storedProcedureCreates"
+    BEFORE_LOAD="tableCreates extraCommandsBeforeLoad storedProcedureCreates"
 fi
 
 AFTER_LOAD="indexCreates foreignKeys extraHistID buildFinish"
@@ -29,9 +29,9 @@ for step in ${BEFORE_LOAD} ; do
 done
 
 if [ $DB == "oracle" ] ; then
-sqlplus -s $USER/$PASSWORD@XE << EOF
-@$PWD/sql.oracle/storedProcedureCreates.sql
-exit
+    sqlplus -s $USER/$PASSWORD@XE << EOF
+    @$PWD/sql.oracle/storedProcedureCreates.sql
+    exit
 EOF
 fi
 

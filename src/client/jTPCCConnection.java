@@ -27,6 +27,7 @@ public class jTPCCConnection
     public PreparedStatement    stmtNewOrderUpdateStock;
     public PreparedStatement    stmtNewOrderInsertOrderLine;
     public PreparedStatement	stmtNewOrderStoredProc;
+    public String		stmtNewOrderStoredProcOracle;
 
     public PreparedStatement    stmtPaymentSelectWarehouse;
     public PreparedStatement    stmtPaymentSelectDistrict;
@@ -39,15 +40,18 @@ public class jTPCCConnection
     public PreparedStatement    stmtPaymentUpdateCustomerWithData;
     public PreparedStatement    stmtPaymentInsertHistory;
     public PreparedStatement 	stmtPaymentStoredProc;
+    public String		stmtPaymentStoredProcOracle;
 
     public PreparedStatement    stmtOrderStatusSelectCustomerListByLast;
     public PreparedStatement    stmtOrderStatusSelectCustomer;
     public PreparedStatement    stmtOrderStatusSelectLastOrder;
     public PreparedStatement    stmtOrderStatusSelectOrderLine;
     public PreparedStatement	stmtOrderStatusStoredProc;
+    public String		stmtOrderStatusStoredProcOracle;
 
     public PreparedStatement    stmtStockLevelSelectLow;
     public PreparedStatement    stmtStockLevelStoredProc;
+    public String		stmtStockLevelStoredProcOracle;
 
     public PreparedStatement    stmtDeliveryBGSelectOldestNewOrder;
     public PreparedStatement    stmtDeliveryBGDeleteOldestNewOrder;
@@ -56,7 +60,8 @@ public class jTPCCConnection
     public PreparedStatement    stmtDeliveryBGSelectSumOLAmount;
     public PreparedStatement    stmtDeliveryBGUpdateOrderLine;
     public PreparedStatement    stmtDeliveryBGUpdateCustomer;
-	public PreparedStatement	stmtDeliveryBGStoredProc;
+    public PreparedStatement	stmtDeliveryBGStoredProc;
+    public String		stmtDeliveryBGStoredProcOracle;
 
     public jTPCCConnection(Connection dbConn, int dbType)
 	throws SQLException
@@ -118,6 +123,13 @@ public class jTPCCConnection
 	    case jTPCCConfig.DB_POSTGRES:
 		stmtNewOrderStoredProc = dbConn.prepareStatement(
 		    "SELECT * FROM bmsql_proc_new_order (?, ?, ?, ?, ?, ?)");
+	    break;
+
+	    case jTPCCConfig.DB_ORACLE:
+		stmtNewOrderStoredProcOracle =
+		    "{call oracle_proc_new_order(?, ?, ?, ?, ?, ?, ?, ?, ?, ?"  +
+		    ",?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+	    break;
 	}
 
 	// PreparedStatements for PAYMENT
@@ -179,6 +191,14 @@ public class jTPCCConnection
 	    case jTPCCConfig.DB_POSTGRES:
 		stmtPaymentStoredProc = dbConn.prepareStatement(
 		    "SELECT * FROM bmsql_proc_payment (?, ?, ?, ?, ?, ?, ?)");
+	    break;
+
+	    case jTPCCConfig.DB_ORACLE:
+		stmtPaymentStoredProcOracle =
+		    "{call oracle_proc_payment(?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
+		    " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
+		    " ?, ?, ?, ?, ?)}";
+	    break;
 	}
 
 	// PreparedStatements for ORDER_STATUS
@@ -212,6 +232,13 @@ public class jTPCCConnection
 	    case jTPCCConfig.DB_POSTGRES:
 		stmtOrderStatusStoredProc = dbConn.prepareStatement(
 		    "SELECT * FROM bmsql_proc_order_status (?, ?, ?, ?)");
+	    break;
+
+	    case jTPCCConfig.DB_ORACLE:
+		stmtOrderStatusStoredProcOracle =
+		    "{call oracle_proc_order_status(?, ?, ?, " +
+		    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+	    break;
 	}
 
 	// PreparedStatements for STOCK_LEVEL
@@ -257,6 +284,13 @@ public class jTPCCConnection
 	    case jTPCCConfig.DB_POSTGRES:
 		stmtStockLevelStoredProc = dbConn.prepareStatement(
 		    "SELECT * FROM bmsql_proc_stock_level (?, ?, ?)");
+	    break;
+
+	    case jTPCCConfig.DB_ORACLE:
+		stmtStockLevelStoredProcOracle =
+		    "{call oracle_proc_stock_level(?, ?, ?, ?)}";
+	    break;
+
 	}
 
 	// PreparedStatements for DELIVERY_BG
@@ -294,6 +328,12 @@ public class jTPCCConnection
 		case jTPCCConfig.DB_POSTGRES:
 		stmtDeliveryBGStoredProc = dbConn.prepareStatement(
 			"SELECT * FROM bmsql_proc_delivery_bg(?, ?, ?)");
+		break;
+
+		case jTPCCConfig.DB_ORACLE:
+		    stmtDeliveryBGStoredProcOracle =
+			"call oracle_proc_delivery_bg(?, ?, ?, ?)";
+		break;
 	}
 
     }

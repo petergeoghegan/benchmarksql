@@ -14,7 +14,6 @@ import java.util.*;
 
 public class ExecJDBC {
 
-
   public static void main(String[] args) {
 
     Connection conn = null;
@@ -36,6 +35,12 @@ public class ExecJDBC {
       ini.getProperty("user"),ini.getProperty("password"));
     conn.setAutoCommit(true);
 
+    // Retrieve datbase type
+    String dbType = ini.getProperty("db");
+
+    // For oracle : Boolean that indicates whether or not there is a statement ready to be executed.
+    Boolean ora_ready_to_execute = false;
+
     // Create Statement
     stmt = conn.createStatement();
 
@@ -45,9 +50,7 @@ public class ExecJDBC {
 
       // loop thru input file and concatenate SQL statement fragments
       while((rLine = in.readLine()) != null) {
-
          String line = rLine.trim();
-
          if (line.length() != 0) {
            if (line.startsWith("--")) {
               System.out.println(rLine);  // print comment line
@@ -63,6 +66,23 @@ public class ExecJDBC {
 		       if (line.equals("$$"))
 		       {
 		           break;
+		       }
+		   }
+		   continue;
+	       }
+
+	       if (line.startsWith("CREATE") && dbType.contains("oracle"))
+	       {
+		   sql.append(rLine);
+		   sql.append("\n");
+		   while((rLine = in.readLine()) != null) {
+		       line = rLine.trim();
+		       sql.append(rLine);
+		       sql.append("\n");
+		       if (line.equals("/"))
+		       {
+			   ora_ready_to_execute = true;
+			   break;
 		       }
 		   }
 		   continue;
@@ -88,6 +108,15 @@ public class ExecJDBC {
            }
 
          } //end if
+
+	 if (ora_ready_to_execute == true)
+	 {
+	    String query = sql.toString();
+
+	    execJDBC(stmt, query);
+	    sql = new StringBuffer();
+	    ora_ready_to_execute = false;
+	 }
 
       } //end while
 

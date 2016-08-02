@@ -14,6 +14,7 @@ import java.util.*;
 
 public class ExecJDBC {
 
+
   public static void main(String[] args) {
 
     Connection conn = null;
@@ -50,7 +51,9 @@ public class ExecJDBC {
 
       // loop thru input file and concatenate SQL statement fragments
       while((rLine = in.readLine()) != null) {
+
          String line = rLine.trim();
+
          if (line.length() != 0) {
            if (line.startsWith("--")) {
               System.out.println(rLine);  // print comment line

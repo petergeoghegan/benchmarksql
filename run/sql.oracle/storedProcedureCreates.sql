@@ -56,16 +56,9 @@ CREATE OR REPLACE FUNCTION oracle_cid_from_clast(
     in_c_d_id IN integer,
     in_c_last IN varchar2)
 RETURN integer AS
-    CURSOR cust_cursor (p_w_id integer, p_d_id integer, p_c_last varchar) IS
-	SELECT c_id FROM bmsql_customer
-	WHERE c_w_id = p_w_id
-	  AND c_d_id = p_d_id
-	  AND c_last = p_c_last
-	ORDER BY c_first;
     num_cust integer;
     idx_cust integer;
     ret_c_id integer;
-    var_curs integer;
     cust_not_found EXCEPTION;
 BEGIN
     -- Clause 2.5.2.2 Case 2, customer selected based on c_last.
@@ -82,12 +75,20 @@ BEGIN
 
     idx_cust := num_cust + 1 / 2 - 1;
 
-    OPEN cust_cursor(in_c_w_id, in_c_d_id, in_c_last);
-    FOR var_curs IN 1..idx_cust LOOP
-	FETCH cust_cursor INTO ret_c_id;
-    END LOOP;
-    FETCH cust_cursor INTO ret_c_id;
-    CLOSE cust_cursor;
+    SELECT c_id
+    INTO ret_c_id
+	FROM(
+	    SELECT c_id, ROWNUM AS rn
+		FROM(
+		    SELECT c_id
+			FROM bmsql_customer
+			WHERE c_w_id = in_c_w_id
+			  AND c_d_id = in_c_d_id
+			  AND c_last = in_c_last
+			ORDER BY c_first
+		    )
+	    )
+	WHERE rn = idx_cust;
 
     RETURN ret_c_id;
 
@@ -99,7 +100,6 @@ EXCEPTION
 			 TO_CHAR(in_c_last)||' not found');
 END;
 /
-
 
 CREATE OR REPLACE PROCEDURE oracle_proc_stock_level(
     in_w_id IN integer,

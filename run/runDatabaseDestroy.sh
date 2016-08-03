@@ -18,7 +18,7 @@ PASSWORD="$(grep '^password=' $PROPS | sed -e 's/^password=//' )"
 if [ $DB == "oracle" ] ; then
 STEPS="tableDrops"
 else
-STEPS="tableDrops storedProcedureCreates"
+STEPS="tableDrops storedProcedureDrops"
 fi
 
 for step in ${STEPS} ; do

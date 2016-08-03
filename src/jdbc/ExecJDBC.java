@@ -52,7 +52,16 @@ public class ExecJDBC {
       // loop thru input file and concatenate SQL statement fragments
       while((rLine = in.readLine()) != null) {
 
-         String line = rLine.trim();
+	 if (ora_ready_to_execute == true)
+         {
+            String query = sql.toString();
+
+            execJDBC(stmt, query);
+            sql = new StringBuffer();
+            ora_ready_to_execute = false;
+         }
+
+	String line = rLine.trim().toUpperCase();
 
          if (line.length() != 0) {
            if (line.startsWith("--")) {
@@ -74,7 +83,7 @@ public class ExecJDBC {
 		   continue;
 	       }
 
-	       if (line.startsWith("CREATE") && dbType.contains("oracle"))
+	       if (line.matches("(.*)CREATE(.*)((PROCEDURE)|(FUNCTION)|(TRIGGER))(.*)") && dbType.contains("oracle"))
 	       {
 		   sql.append(rLine);
 		   sql.append("\n");
@@ -111,15 +120,6 @@ public class ExecJDBC {
            }
 
          } //end if
-
-	 if (ora_ready_to_execute == true)
-	 {
-	    String query = sql.toString();
-
-	    execJDBC(stmt, query);
-	    sql = new StringBuffer();
-	    ora_ready_to_execute = false;
-	 }
 
       } //end while
 

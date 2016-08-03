@@ -13,18 +13,19 @@
 -- Adjust the sequence above the current max(hist_id)
 alter sequence bmsql_hist_id_seq increment by 30000;
 declare
-    n integer\;
-    i integer\;
-    dummy integer\;
+    n integer;
+    i integer;
+    dummy integer;
 begin
-    select max(hist_id) into n from bmsql_history\;
-    i := 0\;
+    select max(hist_id) into n from bmsql_history;
+    i := 0;
     while i <= n loop
-	select bmsql_hist_id_seq.nextval into dummy from dual\;
-	i := i + 30000\;
-    end loop\;
-end\;
-;
+	select bmsql_hist_id_seq.nextval into dummy from dual;
+	i := i + 30000;
+    end loop;
+end;
+/
+
 alter sequence bmsql_hist_id_seq increment by 1;
 
 -- Create a trigger that forces hist_id to be hist_id_seq.nextval
@@ -34,9 +35,9 @@ create trigger bmsql_history_before_insert
     begin
 	if :new.hist_id is null then
 	    select bmsql_hist_id_seq.nextval into :new.hist_id from dual\;
-	end if\;
-    end\;
-;
+	end if;
+    end;
+/
 
 -- Add a primary key history(hist_id)
 alter table bmsql_history add primary key (hist_id);

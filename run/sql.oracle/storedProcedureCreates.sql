@@ -1,36 +1,29 @@
 -- {
 CREATE OR REPLACE TYPE int_array AS TABLE OF INTEGER;
-/
 -- }
 
 -- {
 CREATE OR REPLACE TYPE num_array AS TABLE OF NUMBER;
-/
 -- }
 
 -- {
 CREATE OR REPLACE TYPE varchar24_array FORCE AS TABLE OF VARCHAR2(24);
-/
 -- }
 
 -- {
 CREATE OR REPLACE TYPE varchar16_array AS TABLE OF VARCHAR2(16);
-/
 -- }
 
 -- {
 CREATE OR REPLACE TYPE varchar50_array FORCE AS TABLE OF VARCHAR2(50);
-/
 -- }
 
 -- {
 CREATE OR REPLACE TYPE timestamp_array AS TABLE OF timestamp;
-/
 -- }
 
 -- {
 CREATE OR REPLACE TYPE char_array AS TABLE OF char(1);
-/
 -- }
 
 -- {
@@ -39,7 +32,6 @@ CREATE OR REPLACE TYPE rec1 AS OBJECT(
     price number,
     data varchar2(50)
 );
-/
 -- }
 
 -- {
@@ -57,7 +49,6 @@ CREATE OR REPLACE TYPE rec2 AS OBJECT(
     s_dist9 varchar2(24),
     s_dist10 varchar2(24)
 );
-/
 -- }
 
 -- {
@@ -68,7 +59,6 @@ CREATE OR REPLACE TYPE rec3 AS OBJECT(
     ol_amount number,
     ol_delivery_d timestamp
 );
-/
 -- }
 
 -- {
@@ -120,7 +110,6 @@ EXCEPTION
 			 TO_CHAR(in_c_d_id)||' C_LAST='||
 			 TO_CHAR(in_c_last)||' not found');
 END;
-/
 -- }
 
 -- {
@@ -148,7 +137,6 @@ BEGIN
                         )
 	    );
 END;
-/
 -- }
 
 -- {
@@ -365,7 +353,6 @@ EXCEPTION
     WHEN stock_not_found THEN
 	DBMS_OUTPUT.PUT_LINE('STOCK not found');
 END;
-/
 -- }
 
 -- {
@@ -463,7 +450,6 @@ BEGIN
         var_d_id := var_d_id + 1;
     END LOOP;
 END;
-/
 -- }
 
 -- {
@@ -594,7 +580,6 @@ BEGIN
                 in_c_id, in_c_d_id, in_c_w_id, in_d_id, in_w_id,
                 out_h_date, in_h_amount, out_w_name||'    '||out_d_name);
 END;
-/
 -- }
 
 -- {
@@ -697,5 +682,5 @@ EXCEPTION
     WHEN NO_DATA_FOUND THEN
         v_order_line_check := 0;
 END;
-/
 -- }
+

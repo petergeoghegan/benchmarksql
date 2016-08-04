@@ -61,10 +61,10 @@ public class ExecJDBC {
             ora_ready_to_execute = false;
          }
 
-	String line = rLine.trim().toUpperCase();
+	String line = rLine.trim();
 
          if (line.length() != 0) {
-           if (line.startsWith("--")) {
+           if (line.startsWith("--") && !line.startsWith("-- {")) {
               System.out.println(rLine);  // print comment line
            } else {
 	       if (line.equals("$$"))
@@ -83,7 +83,7 @@ public class ExecJDBC {
 		   continue;
 	       }
 
-	       if (line.matches("(.*)CREATE(.*)((PROCEDURE)|(FUNCTION)|(TRIGGER))(.*)") && dbType.contains("oracle"))
+	       if (line.startsWith("-- {"))
 	       {
 		   sql.append(rLine);
 		   sql.append("\n");
@@ -91,7 +91,7 @@ public class ExecJDBC {
 		       line = rLine.trim();
 		       sql.append(rLine);
 		       sql.append("\n");
-		       if (line.equals("/"))
+		       if (line.startsWith("-- }"))
 		       {
 			   ora_ready_to_execute = true;
 			   break;

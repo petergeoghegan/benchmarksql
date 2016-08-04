@@ -1,31 +1,48 @@
+-- {
 CREATE OR REPLACE TYPE int_array AS TABLE OF INTEGER;
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE num_array AS TABLE OF NUMBER;
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE varchar24_array FORCE AS TABLE OF VARCHAR2(24);
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE varchar16_array AS TABLE OF VARCHAR2(16);
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE varchar50_array FORCE AS TABLE OF VARCHAR2(50);
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE timestamp_array AS TABLE OF timestamp;
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE char_array AS TABLE OF char(1);
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE rec1 AS OBJECT(
     name varchar2(24),
     price number,
     data varchar2(50)
 );
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE rec2 AS OBJECT(
     quantity integer,
     s_data varchar2(50),
@@ -41,7 +58,9 @@ CREATE OR REPLACE TYPE rec2 AS OBJECT(
     s_dist10 varchar2(24)
 );
 /
+-- }
 
+-- {
 CREATE OR REPLACE TYPE rec3 AS OBJECT(
     ol_i_id integer,
     ol_supply_w_id integer,
@@ -50,7 +69,9 @@ CREATE OR REPLACE TYPE rec3 AS OBJECT(
     ol_delivery_d timestamp
 );
 /
+-- }
 
+-- {
 CREATE OR REPLACE FUNCTION oracle_cid_from_clast(
     in_c_w_id IN integer,
     in_c_d_id IN integer,
@@ -100,7 +121,9 @@ EXCEPTION
 			 TO_CHAR(in_c_last)||' not found');
 END;
 /
+-- }
 
+-- {
 CREATE OR REPLACE PROCEDURE oracle_proc_stock_level(
     in_w_id IN integer,
     in_d_id IN integer,
@@ -126,7 +149,9 @@ BEGIN
 	    );
 END;
 /
+-- }
 
+-- {
 CREATE OR REPLACE PROCEDURE oracle_proc_new_order(
     in_w_id IN integer,
     in_d_id IN integer,
@@ -341,8 +366,9 @@ EXCEPTION
 	DBMS_OUTPUT.PUT_LINE('STOCK not found');
 END;
 /
+-- }
 
-
+-- {
 CREATE OR REPLACE PROCEDURE oracle_proc_delivery_bg(
     in_w_id IN integer,
     in_o_carrier_id IN integer,
@@ -438,8 +464,9 @@ BEGIN
     END LOOP;
 END;
 /
+-- }
 
-
+-- {
 CREATE OR REPLACE PROCEDURE oracle_proc_payment(
     in_w_id IN integer,
     in_d_id IN integer,
@@ -568,7 +595,9 @@ BEGIN
                 out_h_date, in_h_amount, out_w_name||'    '||out_d_name);
 END;
 /
+-- }
 
+-- {
 CREATE OR REPLACE PROCEDURE oracle_proc_order_status(
     in_w_id IN integer,
     in_d_id IN integer,
@@ -669,3 +698,4 @@ EXCEPTION
         v_order_line_check := 0;
 END;
 /
+-- }

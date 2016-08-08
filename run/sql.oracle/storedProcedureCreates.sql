@@ -501,7 +501,7 @@ BEGIN
 	INTO out_d_name, out_d_street_1, out_d_street_2,
 	     out_d_city, out_d_state, out_d_zip;
 
-    --Update the WAREHOUSE
+    --Update and Select the WAREHOUSE
     UPDATE bmsql_warehouse
         SET w_ytd = w_ytd + in_h_amount
 	WHERE w_id = in_w_id
@@ -515,7 +515,7 @@ BEGIN
 	in_c_id := oracle_cid_from_clast(in_c_w_id, in_c_d_id, in_c_last);
     END IF;
 
-    -- Update and Select the customer
+    -- Update and Select the CUSTOMER
     UPDATE bmsql_customer
 	SET c_balance = c_balance - in_h_amount,
 	    c_ytd_payment = c_ytd_payment + in_h_amount,

@@ -412,31 +412,21 @@ BEGIN
 	 * rest of the DELIVERY_BG.
 	*/
 
-	-- Update the ORDER setting the o_carrier_id.
+	-- Update the ORDER setting the o_carrier_id and Select the o_c_id from the ORDER.
 	UPDATE bmsql_oorder
 	    SET o_carrier_id = in_o_carrier_id
 	    WHERE o_w_id = in_w_id AND o_d_id = var_d_id
-	      AND o_id = var_o_id;
+	      AND o_id = var_o_id
+	RETURNING o_c_id
+	    INTO var_c_id;
 
-	-- Select the o_c_id from the ORDER.
-	SELECT o_c_id
-	INTO var_c_id
-	    FROM bmsql_oorder
-	    WHERE o_w_id = in_w_id AND o_d_id = var_d_id
-	    AND o_id = var_o_id;
-
-	--Update ORDER_LINE setting the ol_delivery_d
+	--Update ORDER_LINE setting the ol_delivery_d and Select the sum(ol_amount) from ORDER_LINE.
 	UPDATE bmsql_order_line
 	    SET ol_delivery_d = in_ol_delivery_d
 	    WHERE ol_w_id = in_w_id AND ol_d_id = var_d_id
-	      AND ol_o_id = var_o_id;
-
-	--SELECT the sum(ol _amount) from ORDER_LINE.
-	SELECT sum(ol_amount) AS sum_ol_amount
-	INTO var_sum_ol_amount
-	    FROM bmsql_order_line
-	    WHERE ol_w_id = in_w_id AND ol_d_id = var_d_id
-	      AND ol_o_id = var_o_id;
+	      AND ol_o_id = var_o_id
+	RETURNING sum(ol_amount)
+	    INTO var_sum_ol_amount;
 
 	--UPDATE the CUSTOMER.
 	UPDATE bmsql_customer

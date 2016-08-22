@@ -7,7 +7,7 @@ CREATE OR REPLACE TYPE num_array AS TABLE OF NUMBER;
 -- }
 
 -- {
-CREATE OR REPLACE TYPE varchar24_array FORCE AS TABLE OF VARCHAR2(24);
+CREATE OR REPLACE TYPE varchar24_array AS TABLE OF VARCHAR2(24);
 -- }
 
 -- {
@@ -24,6 +24,12 @@ CREATE OR REPLACE TYPE timestamp_array AS TABLE OF timestamp;
 
 -- {
 CREATE OR REPLACE TYPE char_array AS TABLE OF char(1);
+-- }
+
+-- {
+CREATE OR REPLACE PACKAGE rowpack AS
+    TYPE rowidarray IS TABLE OF ROWID INDEX BY BINARY_INTEGER;
+END rowpack;
 -- }
 
 -- {
@@ -62,53 +68,27 @@ CREATE OR REPLACE TYPE rec3 AS OBJECT(
 -- }
 
 -- {
-CREATE OR REPLACE FUNCTION oracle_cid_from_clast(
+CREATE OR REPLACE FUNCTION oracle_rowid_from_clast(
     in_c_w_id IN integer,
     in_c_d_id IN integer,
-    in_c_last IN varchar2)
-RETURN integer AS
-    num_cust integer;
-    idx_cust integer;
-    ret_c_id integer;
-    cust_not_found EXCEPTION;
+    in_c_last IN varchar
+) RETURN ROWID AS
+    rowArr rowpack.rowidarray;
+    rowNumber rowid;
+    rowCnt integer;
+    customer integer;
 BEGIN
     -- Clause 2.5.2.2 Case 2, customer selected based on c_last.
-    SELECT count(*)
-    INTO num_cust
-	FROM bmsql_customer
-	WHERE c_w_id = in_c_w_id
-	  AND c_d_id = in_c_d_id
-	  AND c_last = in_c_last;
+    SELECT rowid
+        BULK COLLECT INTO rowARR
+    FROM bmsql_customer
+    WHERE c_w_id = in_c_w_id AND c_d_id = in_c_d_id AND c_last = in_c_last
+    ORDER BY c_first;
 
-    IF num_cust = 0 THEN
-	RAISE cust_not_found;
-    END IF;
+    rowCnt := SQL%ROWCOUNT;
+    rowNumber := rowArr((rowCnt + 1 )/ 2);
 
-    idx_cust := num_cust + 1 / 2 - 1;
-
-    SELECT c_id
-    INTO ret_c_id
-	FROM(
-	    SELECT c_id, ROWNUM AS rn
-		FROM(
-		    SELECT c_id
-			FROM bmsql_customer
-			WHERE c_w_id = in_c_w_id
-			  AND c_d_id = in_c_d_id
-			  AND c_last = in_c_last
-			ORDER BY c_first
-		    )
-	    )
-	WHERE rn = idx_cust;
-
-    RETURN ret_c_id;
-
-EXCEPTION
-    WHEN cust_not_found THEN
-        DBMS_OUTPUT.PUT_LINE ('Customer(s) for C_W_ID='||
-			 TO_CHAR(in_c_w_id)||' C_D_ID='||
-			 TO_CHAR(in_c_d_id)||' C_LAST='||
-			 TO_CHAR(in_c_last)||' not found');
+    RETURN rowNumber;
 END;
 -- }
 
@@ -120,6 +100,8 @@ CREATE OR REPLACE PROCEDURE oracle_proc_stock_level(
     out_low_stock OUT integer
 ) AS
 BEGIN
+    --Selects and counts the number of recently sold items that have
+    --a stock level below the specified threshold.
     SELECT count(*)
     INTO out_low_stock
 	FROM(
@@ -362,83 +344,273 @@ CREATE OR REPLACE PROCEDURE oracle_proc_delivery_bg(
     in_ol_delivery_d IN timestamp,
     out_delivered_o_id OUT int_array
 ) AS
-    var_d_id integer;
-    var_o_id integer;
-    var_c_id integer;
-    var_sum_ol_amount decimal;
-    CURSOR cursor_1 IS
-	SELECT no_o_id
-	    FROM bmsql_new_order
-	    WHERE no_w_id = in_w_id AND no_d_id = var_d_id
-	    ORDER BY no_o_id ASC;
+    sums num_array;
+    var_d_id int_array;
+    var_o_c_id int_array;
+    var_dist int_array;
+    var_x integer;
+    order_count integer;
 BEGIN
-	out_delivered_o_id := int_array();
-	out_delivered_o_id.EXTEND(10);
-	var_d_id := 1;
-    WHILE var_d_id < 11 LOOP
-	var_o_id := -1;
-        /*
-	 * Try to find the oldest undelivered order for this
-	 * DISTRICT. There may not be one, which is a case
-	 * that needs to be reported.
-	 */
-	WHILE var_o_id < 0 LOOP
-	    OPEN cursor_1;
-	    FETCH cursor_1 INTO var_o_id;
-	    CLOSE cursor_1;
+    var_dist := int_array();
+    FOR var_x IN 1..10 LOOP
+	var_dist.EXTEND;
+	var_dist(var_x) := var_x;
+    END LOOP;
 
-	    IF var_o_id = -1 THEN
-		EXIT;
-	    END IF;
+    FORALL i in 1..10
+	DELETE FROM bmsql_new_order N
+	WHERE no_d_id = var_dist(i)
+	  AND no_w_id = in_w_id
+	  AND no_o_id = (SELECT min(no_o_id)
+			    FROM bmsql_new_order
+			 WHERE no_d_id = N.no_d_id
+			   AND no_w_id = N.no_w_id)
+	RETURNING no_d_id, no_o_id
+	BULK COLLECT INTO var_d_id, out_delivered_o_id;
 
-	    DELETE FROM bmsql_new_order
-		WHERE no_w_id = in_w_id AND no_d_id = var_d_id
-		  AND no_o_id = var_o_id;
+    order_count := SQL%ROWCOUNT;
 
-	    IF SQL%NOTFOUND THEN
-		var_o_id := -1;
-	    END IF;
-        END LOOP;
-
-	IF var_o_id < 0 THEN
-	    --NO indelivered NEW_ORDER found for this District.
-	    var_d_id := var_d_id + 1;
-	    CONTINUE;
-	END IF;
-
-	/*
-	 * WE found our oldest undelivered order for this DISTRICT
-	 * and the NEW_ORDER line has been deleted. Process the
-	 * rest of the DELIVERY_BG.
-	*/
-
-	-- Update the ORDER setting the o_carrier_id and Select the o_c_id from the ORDER.
+    FORALL i IN 1..order_count
 	UPDATE bmsql_oorder
 	    SET o_carrier_id = in_o_carrier_id
-	    WHERE o_w_id = in_w_id AND o_d_id = var_d_id
-	      AND o_id = var_o_id
+	WHERE o_id = out_delivered_o_id(i)
+	 AND o_d_id = var_d_id(i)
+	 AND o_w_id = in_w_id
 	RETURNING o_c_id
-	    INTO var_c_id;
+	BULK COLLECT INTO var_o_c_id;
 
-	--Update ORDER_LINE setting the ol_delivery_d and Select the sum(ol_amount) from ORDER_LINE.
+    FORALL i IN 1..order_count
 	UPDATE bmsql_order_line
-	    SET ol_delivery_d = in_ol_delivery_d
-	    WHERE ol_w_id = in_w_id AND ol_d_id = var_d_id
-	      AND ol_o_id = var_o_id
+	    SET ol_delivery_d = CURRENT_TIMESTAMP
+	WHERE ol_w_id = in_w_id
+	 AND ol_d_id = var_d_id(i)
+	 AND ol_o_id = out_delivered_o_id(i)
 	RETURNING sum(ol_amount)
-	    INTO var_sum_ol_amount;
+	BULK COLLECT INTO sums;
 
-	--UPDATE the CUSTOMER.
+    FORALL i IN 1..order_count
 	UPDATE bmsql_customer
-	    SET c_balance = c_balance + var_sum_ol_amount,
-		c_delivery_cnt = c_delivery_cnt +1
-	    WHERE c_w_id = in_w_id AND c_d_id = var_d_id
-	      AND c_id = var_c_id;
+	    SET c_balance = c_balance + sums(i),
+		c_delivery_cnt = c_delivery_cnt + 1
+	WHERE c_w_id = in_w_id
+	 AND c_d_id = var_d_id(i)
+	 AND c_id = var_o_c_id(i);
 
-	out_delivered_o_id(var_d_id) := var_o_id;
+END;
+-- }
 
-        var_d_id := var_d_id + 1;
-    END LOOP;
+-- {
+
+-- Stored procedure to be called if the customer last name is given rather
+-- than the customer id for the payment transaction.
+CREATE OR REPLACE PROCEDURE oracle_proc_payment_clast(
+    in_w_id IN integer,
+    in_d_id IN integer,
+    in_c_id IN OUT integer,
+    in_c_d_id IN integer,
+    in_c_w_id IN integer,
+    in_c_last IN OUT varchar2,
+    in_h_amount IN number,
+    out_w_name OUT varchar2,
+    out_w_street_1 OUT varchar2,
+    out_w_street_2 OUT varchar2,
+    out_w_city OUT varchar2,
+    out_w_state OUT varchar2,
+    out_w_zip OUT varchar2,
+    out_d_name OUT varchar2,
+    out_d_street_1 OUT varchar2,
+    out_d_street_2 OUT varchar2,
+    out_d_city OUT varchar2,
+    out_d_state OUT varchar2,
+    out_d_zip OUT varchar2,
+    out_c_first OUT varchar2,
+    out_c_middle OUT varchar2,
+    out_c_street_1 OUT varchar2,
+    out_c_street_2 OUT varchar2,
+    out_c_city OUT varchar2,
+    out_c_state OUT varchar2,
+    out_c_zip OUT varchar2,
+    out_c_phone OUT varchar2,
+    out_c_since OUT timestamp,
+    out_c_credit OUT varchar2,
+    out_c_credit_lim OUT number,
+    out_c_discount OUT number,
+    out_c_balance OUT number,
+    out_c_data OUT varchar2,
+    out_h_date OUT timestamp
+) IS
+    row_id rowid;
+BEGIN
+
+    out_h_date := CURRENT_TIMESTAMP;
+
+     --Update and Select the WAREHOUSE
+    UPDATE bmsql_warehouse
+        SET w_ytd = w_ytd + in_h_amount
+        WHERE w_id = in_w_id
+    RETURNING w_name, w_street_1, w_street_2, w_city,
+              w_state, w_zip
+        INTO out_w_name, out_w_street_1, out_w_street_2,
+             out_w_city, out_w_state, out_w_zip;
+
+    row_id := oracle_rowid_from_clast(in_c_w_id, in_c_d_id, in_c_last);
+
+    --Update and Select the DISTRICT
+    UPDATE bmsql_district
+        SET d_ytd = d_ytd + in_h_amount
+        WHERE d_w_id = in_w_id AND d_id = in_d_id
+    RETURNING d_name, d_street_1, d_street_2,
+              d_city, d_state, d_zip
+        INTO out_d_name, out_d_street_1, out_d_street_2,
+             out_d_city, out_d_state, out_d_zip;
+
+    -- Update and Select the CUSTOMER
+    UPDATE bmsql_customer
+        SET c_balance = c_balance - in_h_amount,
+            c_ytd_payment = c_ytd_payment + in_h_amount,
+            c_payment_cnt = c_payment_cnt + 1
+        WHERE rowid = row_id
+    RETURNING c_id, c_first, c_middle, c_last, c_street_1,
+              c_street_2, c_city, c_state, c_zip,
+              c_phone, c_since, c_credit, c_credit_lim,
+              c_discount, c_balance
+        INTO in_c_id, out_c_first, out_c_middle, in_c_last,
+             out_c_street_1, out_c_street_2, out_c_city,
+             out_c_state, out_c_zip, out_c_phone, out_c_since,
+             out_c_credit, out_c_credit_lim, out_c_discount,
+             out_c_balance;
+
+    out_c_balance := out_c_balance - in_h_amount;
+    out_c_data := ' ';
+
+    --Customer with bad credit, need to do the C_DATA work.
+    IF out_c_credit = 'BC' THEN
+        UPDATE bmsql_customer
+            SET c_data = SUBSTR('C_ID='   || TO_CHAR(in_c_id)   ||
+                             ' C_D_ID='   || TO_CHAR(in_c_d_id) ||
+                             ' C_W_ID='   || TO_CHAR(in_c_w_id) ||
+                             ' D_ID='     || TO_CHAR(in_d_id)   ||
+                             ' W_ID='     || TO_CHAR(in_w_id)   ||
+                             ' H_AMOUNT=' || ROUND(in_h_amount,2), 1, 500)
+            WHERE rowid = row_id
+        RETURNING c_data
+            INTO out_c_data;
+    END IF;
+
+    --Insert the HISTORY row
+    INSERT INTO bmsql_history (
+            h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id,
+            h_date, h_amount, h_data)
+    VALUES (
+            in_c_id, in_c_d_id, in_c_w_id, in_d_id, in_w_id,
+            out_h_date, in_h_amount, out_w_name||'    '||out_d_name);
+END;
+-- }
+
+-- {
+
+-- Stored procedure to be called if the custoemr id is given rather
+-- than the customer last name.
+CREATE OR REPLACE PROCEDURE oracle_proc_payment_cid(
+    in_w_id IN integer,
+    in_d_id IN integer,
+    in_c_id IN OUT integer,
+    in_c_d_id IN integer,
+    in_c_w_id IN integer,
+    in_c_last IN OUT varchar2,
+    in_h_amount IN number,
+    out_w_name OUT varchar2,
+    out_w_street_1 OUT varchar2,
+    out_w_street_2 OUT varchar2,
+    out_w_city OUT varchar2,
+    out_w_state OUT varchar2,
+    out_w_zip OUT varchar2,
+    out_d_name OUT varchar2,
+    out_d_street_1 OUT varchar2,
+    out_d_street_2 OUT varchar2,
+    out_d_city OUT varchar2,
+    out_d_state OUT varchar2,
+    out_d_zip OUT varchar2,
+    out_c_first OUT varchar2,
+    out_c_middle OUT varchar2,
+    out_c_street_1 OUT varchar2,
+    out_c_street_2 OUT varchar2,
+    out_c_city OUT varchar2,
+    out_c_state OUT varchar2,
+    out_c_zip OUT varchar2,
+    out_c_phone OUT varchar2,
+    out_c_since OUT timestamp,
+    out_c_credit OUT varchar2,
+    out_c_credit_lim OUT number,
+    out_c_discount OUT number,
+    out_c_balance OUT number,
+    out_c_data OUT varchar2,
+    out_h_date OUT timestamp
+) IS
+    var_c_rowid rowid;
+BEGIN
+
+    out_h_date := CURRENT_TIMESTAMP;
+
+     --Update and Select the WAREHOUSE
+    UPDATE bmsql_warehouse
+        SET w_ytd = w_ytd + in_h_amount
+        WHERE w_id = in_w_id
+    RETURNING w_name, w_street_1, w_street_2, w_city,
+              w_state, w_zip
+        INTO out_w_name, out_w_street_1, out_w_street_2,
+             out_w_city, out_w_state, out_w_zip;
+
+    --Update and Select the DISTRICT
+    UPDATE bmsql_district
+	SET d_ytd = d_ytd + in_h_amount
+	WHERE d_w_id = in_w_id AND d_id = in_d_id
+    RETURNING d_name, d_street_1, d_street_2,
+	      d_city, d_state, d_zip
+	INTO out_d_name, out_d_street_1, out_d_street_2,
+	     out_d_city, out_d_state, out_d_zip;
+
+    -- Update and Select the CUSTOMER
+    UPDATE bmsql_customer
+	SET c_balance = c_balance - in_h_amount,
+	    c_ytd_payment = c_ytd_payment + in_h_amount,
+	    c_payment_cnt = c_payment_cnt + 1
+	WHERE c_w_id = in_c_w_id AND c_d_id = in_c_d_id AND c_id = in_c_id
+    RETURNING rowid, c_first, c_middle, c_last, c_street_1,
+	      c_street_2, c_city, c_state, c_zip,
+	      c_phone, c_since, c_credit, c_credit_lim,
+	      c_discount, c_balance
+	INTO var_c_rowid, out_c_first, out_c_middle, in_c_last,
+	     out_c_street_1, out_c_street_2, out_c_city,
+	     out_c_state, out_c_zip, out_c_phone, out_c_since,
+	     out_c_credit, out_c_credit_lim, out_c_discount,
+	     out_c_balance;
+
+    out_c_balance := out_c_balance - in_h_amount;
+    out_c_data := ' ';
+
+    --Customer with bad credit, need to do the C_DATA work.
+    IF out_c_credit = 'BC' THEN
+	UPDATE bmsql_customer
+	    SET c_data = SUBSTR('C_ID='      || TO_CHAR(in_c_id)   ||
+                             ' C_D_ID='   || TO_CHAR(in_c_d_id) ||
+                             ' C_W_ID='   || TO_CHAR(in_c_w_id) ||
+                             ' D_ID='     || TO_CHAR(in_d_id)   ||
+                             ' W_ID='     || TO_CHAR(in_w_id)   ||
+                             ' H_AMOUNT=' || ROUND(in_h_amount,2),
+                               1, 500)
+	    WHERE rowid = var_c_rowid
+	RETURNING c_data
+	    INTO out_c_data;
+    END IF;
+
+    --Insert the HISTORY row
+    INSERT INTO bmsql_history (
+            h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id,
+            h_date, h_amount, h_data)
+    VALUES (
+            in_c_id, in_c_d_id, in_c_w_id, in_d_id, in_w_id,
+            out_h_date, in_h_amount, out_w_name||'    '||out_d_name);
 END;
 -- }
 
@@ -480,72 +652,21 @@ CREATE OR REPLACE PROCEDURE oracle_proc_payment(
     out_h_date OUT timestamp
 ) IS
 BEGIN
-    out_h_date := CURRENT_TIMESTAMP;
-
-    --Update and Select the DISTRICT
-    UPDATE bmsql_district
-	SET d_ytd = d_ytd + in_h_amount
-	WHERE d_w_id = in_w_id AND d_id = in_d_id
-    RETURNING d_name, d_street_1, d_street_2,
-	      d_city, d_state, d_zip
-	INTO out_d_name, out_d_street_1, out_d_street_2,
-	     out_d_city, out_d_state, out_d_zip;
-
-    --Update and Select the WAREHOUSE
-    UPDATE bmsql_warehouse
-        SET w_ytd = w_ytd + in_h_amount
-	WHERE w_id = in_w_id
-    RETURNING w_name, w_street_1, w_street_2, w_city,
-	      w_state, w_zip
-	INTO out_w_name, out_w_street_1, out_w_street_2,
-	     out_w_city, out_w_state, out_w_zip;
-
-    -- If C_Last is given instead of C_ID (60%), determine the C_ID.
-    IF in_c_last IS NOT NULL THEN
-	in_c_id := oracle_cid_from_clast(in_c_w_id, in_c_d_id, in_c_last);
+    IF in_c_last is NOT NULL THEN
+	oracle_proc_payment_clast(in_w_id, in_d_id, in_c_id, in_c_d_id, in_c_w_id, in_c_last, in_h_amount,
+				    out_w_name, out_w_street_1, out_w_street_2, out_w_city, out_w_state, out_w_zip,
+				    out_d_name, out_d_street_1, out_d_street_2, out_d_city, out_d_state, out_d_zip,
+				    out_c_first, out_c_middle, out_c_street_1, out_c_street_2, out_c_city, out_c_state,
+				    out_c_zip, out_c_phone, out_c_since, out_c_credit, out_c_credit_lim, out_c_discount,
+				    out_c_balance, out_c_data, out_h_date);
+    ELSE
+	oracle_proc_payment_cid(in_w_id, in_d_id, in_c_id, in_c_d_id, in_c_w_id, in_c_last, in_h_amount,
+                                    out_w_name, out_w_street_1, out_w_street_2, out_w_city, out_w_state, out_w_zip,
+                                    out_d_name, out_d_street_1, out_d_street_2, out_d_city, out_d_state, out_d_zip,
+                                    out_c_first, out_c_middle, out_c_street_1, out_c_street_2, out_c_city, out_c_state,
+                                    out_c_zip, out_c_phone, out_c_since, out_c_credit, out_c_credit_lim, out_c_discount,
+                                    out_c_balance, out_c_data, out_h_date);
     END IF;
-
-    -- Update and Select the CUSTOMER
-    UPDATE bmsql_customer
-	SET c_balance = c_balance - in_h_amount,
-	    c_ytd_payment = c_ytd_payment + in_h_amount,
-	    c_payment_cnt = c_payment_cnt + 1
-	WHERE c_w_id = in_c_w_id AND c_d_id = in_c_d_id AND c_id = in_c_id
-    RETURNING c_first, c_middle, c_last, c_street_1,
-	      c_street_2, c_city, c_state, c_zip,
-	      c_phone, c_since, c_credit, c_credit_lim,
-	      c_discount, c_balance
-	INTO out_c_first, out_c_middle, in_c_last,
-	     out_c_street_1, out_c_street_2, out_c_city,
-	     out_c_state, out_c_zip, out_c_phone, out_c_since,
-	     out_c_credit, out_c_credit_lim, out_c_discount,
-	     out_c_balance;
-
-    out_c_balance := out_c_balance - in_h_amount;
-    out_c_data := ' ';
-
-    --Customer with bad credit, need to do the C_DATA work.
-    IF out_c_credit = 'BC' THEN
-	UPDATE bmsql_customer
-	    SET c_data = SUBSTR('C_ID='      || TO_CHAR(in_c_id)   ||
-                             ' C_D_ID='   || TO_CHAR(in_c_d_id) ||
-                             ' C_W_ID='   || TO_CHAR(in_c_w_id) ||
-                             ' D_ID='     || TO_CHAR(in_d_id)   ||
-                             ' W_ID='     || TO_CHAR(in_w_id)   ||
-                             ' H_AMOUNT=' || ROUND(in_h_amount,2),
-                               1, 500)
-	    WHERE c_w_id = in_c_w_id AND c_d_id = in_c_d_id AND c_id = in_c_id
-	RETURNING c_data
-	    INTO out_c_data;
-    END IF;
-
-    --Insert the HISTORY row
-    INSERT INTO bmsql_history (
-            h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id,
-            h_date, h_amount, h_data)
-    VALUES (
-            in_c_id, in_c_d_id, in_c_w_id, in_d_id, in_w_id,
-            out_h_date, in_h_amount, out_w_name||'    '||out_d_name);
 END;
 -- }
 
@@ -568,6 +689,7 @@ CREATE OR REPLACE PROCEDURE oracle_proc_order_status(
     out_ol_delivery_d OUT varchar16_array
 ) AS
     var_ol_delivery_d timestamp_array := timestamp_array();
+    cust_row_id rowid;
     v_order_line rec3;
     v_order_line_check integer;
     v_ol_idx integer := 1;
@@ -593,16 +715,21 @@ BEGIN
     out_ol_amount.EXTEND(15);
     out_ol_delivery_d.EXTEND(15);
 
-    --If C_LAST is given instead of C_ID (60%), determine the C_ID.
     IF in_c_last IS NOT NULL THEN
-        in_c_id := oracle_cid_from_clast(in_w_id, in_d_id, in_c_last);
-    END IF;
-
-    --Select the CUSTOMER
-    SELECT c_first, c_middle, c_last, c_balance
-    INTO out_c_first, out_c_middle, in_c_last, out_c_balance
+	--If C_LAST is given instead of C_ID (60%), determine the C_ID and
+	--Select the CUSTOMER using the ROWID.
+        cust_row_id := oracle_rowid_from_clast(in_w_id, in_d_id, in_c_last);
+	SELECT c_first, c_middle, c_balance, c_id
+	    INTO out_c_first, out_c_middle, out_c_balance, in_c_id
+        FROM bmsql_customer
+        WHERE rowid = cust_row_id;
+    ELSE
+	--If C_ID is given instead of C_LAST, select the CUSTOMER.
+	SELECT c_first, c_middle, c_last, c_balance
+	    INTO out_c_first, out_c_middle, in_c_last, out_c_balance
 	FROM bmsql_customer
 	WHERE c_w_id = in_w_id AND c_d_id = in_d_id AND c_id = in_c_id;
+    END IF;
 
     --Select the last ORDER for this customer.
     SELECT o_id, o_entry_d, coalesce(o_carrier_id, -1)

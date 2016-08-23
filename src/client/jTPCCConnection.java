@@ -127,7 +127,7 @@ public class jTPCCConnection
 
 	    case jTPCCConfig.DB_ORACLE:
 		stmtNewOrderStoredProcOracle =
-		    "{call oracle_proc_new_order(?, ?, ?, ?, ?, ?, ?, ?, ?, ?"  +
+		    "{call tpccc_oracle.oracle_proc_new_order(?, ?, ?, ?, ?, ?, ?, ?, ?, ?"  +
 		    ",?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
 	    break;
 	}
@@ -195,7 +195,7 @@ public class jTPCCConnection
 
 	    case jTPCCConfig.DB_ORACLE:
 		stmtPaymentStoredProcOracle =
-		    "{call oracle_proc_payment(?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
+		    "{call tpccc_oracle.oracle_proc_payment(?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
 		    " ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?," +
 		    " ?, ?, ?, ?, ?)}";
 	    break;
@@ -236,7 +236,7 @@ public class jTPCCConnection
 
 	    case jTPCCConfig.DB_ORACLE:
 		stmtOrderStatusStoredProcOracle =
-		    "{call oracle_proc_order_status(?, ?, ?, " +
+		    "{call tpccc_oracle.oracle_proc_order_status(?, ?, ?, " +
 		    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
 	    break;
 	}
@@ -288,7 +288,7 @@ public class jTPCCConnection
 
 	    case jTPCCConfig.DB_ORACLE:
 		stmtStockLevelStoredProcOracle =
-		    "{call oracle_proc_stock_level(?, ?, ?, ?)}";
+		    "{call tpccc_oracle.oracle_proc_stock_level(?, ?, ?, ?)}";
 	    break;
 
 	}
@@ -332,7 +332,7 @@ public class jTPCCConnection
 
 		case jTPCCConfig.DB_ORACLE:
 		    stmtDeliveryBGStoredProcOracle =
-			"call oracle_proc_delivery_bg(?, ?, ?, ?)";
+			"call tpccc_oracle.oracle_proc_delivery_bg(?, ?, ?, ?)";
 		break;
 	}
 

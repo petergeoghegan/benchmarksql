@@ -49,5 +49,7 @@ echo "# ------------------------------------------------------------"
 echo "# Loading SQL file ${SQL_FILE}"
 echo "# ------------------------------------------------------------"
 myOPTS="-Dprop=$1"
-myOPTS="$myOPTS -DcommandFile=${SQL_FILE}"
+myOPTS="${myOPTS} -DcommandFile=${SQL_FILE}"
+myOPTS="${myOPTS} -Djava.security.egd=file:/dev/./urandom"
+
 java -cp "$myCP" $myOPTS ExecJDBC

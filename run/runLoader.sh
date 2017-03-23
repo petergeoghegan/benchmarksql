@@ -10,4 +10,7 @@ shift
 
 setCP || exit 1
 
-java -cp "$myCP" -Dprop=$PROPS LoadData $*
+myOPTS="-Dprop=${PROPS}"
+myOPTS="${myOPTS} -Djava.security.egd=file:/dev/./urandom"
+
+java -cp "$myCP" $myOPTS LoadData $*

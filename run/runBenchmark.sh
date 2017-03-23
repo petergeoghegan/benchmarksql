@@ -17,5 +17,6 @@ source funcs.sh $1
 setCP || exit 1
 
 myOPTS="-Dprop=$1 -DrunID=${SEQ}"
+myOPTS="${myOPTS} -Djava.security.egd=file:/dev/./urandom"
 
 java -cp "$myCP" $myOPTS jTPCC

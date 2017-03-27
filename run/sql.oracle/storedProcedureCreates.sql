@@ -303,8 +303,10 @@ CREATE OR REPLACE PACKAGE BODY tpccc_oracle AS
 	        WHERE s_w_id = in_ol_supply_w_id(var_y)
 	          AND s_i_id = in_ol_i_id(var_y)
 		FOR UPDATE;
-        stock_not_found Exception;
 	item_not_found Exception;
+        stock_not_found Exception;
+	PRAGMA EXCEPTION_INIT (item_not_found, -20001);
+	PRAGMA EXCEPTION_INIT (stock_not_found, -20002);
     BEGIN
 	out_brand_generic := char_array();
 	out_s_quantity := int_array();
@@ -470,9 +472,9 @@ CREATE OR REPLACE PACKAGE BODY tpccc_oracle AS
 	END LOOP;
     EXCEPTION
 	WHEN item_not_found THEN
-	    DBMS_OUTPUT.PUT_LINE('Item number is not valid');
+	    RAISE_APPLICATION_ERROR(-20001, 'Item number is not valid');
 	WHEN stock_not_found THEN
-	    DBMS_OUTPUT.PUT_LINE('STOCK not found');
+	    RAISE_APPLICATION_ERROR(-20002, 'STOCK not found');
     END;
 
     PROCEDURE oracle_proc_delivery_bg(

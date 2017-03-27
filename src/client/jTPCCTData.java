@@ -945,7 +945,7 @@ public class jTPCCTData
 	}
 	catch (SQLException se)
         {
-            if (transRbk && se.getMessage().equals("ERROR: Item number is not valid"))
+            if (transRbk && se.getMessage().startsWith("ORA-20001: Item number is not valid"))
             {
                 newOrder.execution_status = new String(
                                 "Item number is not valid");

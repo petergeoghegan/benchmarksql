@@ -202,7 +202,7 @@ def getSystemUsage():
             result = []
             for old, new in zip(lastStatData, statData):
                 result.append((float)(new - old) / deltaTotal)
-        procStatLast = statData
+        lastStatData = statData
         break
 
     procVMStatFD.seek(0, 0)

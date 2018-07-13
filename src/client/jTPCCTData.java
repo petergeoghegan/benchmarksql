@@ -11,8 +11,6 @@ import org.apache.log4j.*;
 import java.util.*;
 import java.sql.*;
 import java.math.*;
-import oracle.jdbc.*;
-import oracle.sql.*;
 
 public class jTPCCTData
 {
@@ -854,20 +852,11 @@ public class jTPCCTData
 
 	try {
 	    // Execute the stored procedure for NEW_ORDER
-	    ArrayDescriptor oracleIntArray =
-		ArrayDescriptor.createDescriptor("INT_ARRAY", conn);
-	    ArrayDescriptor oracleDecimalArray =
-		ArrayDescriptor.createDescriptor("NUM_ARRAY", conn);
-	    ArrayDescriptor oracleCharArray =
-		ArrayDescriptor.createDescriptor("CHAR_ARRAY", conn);
-	    ArrayDescriptor oracleVarcharArray =
-		ArrayDescriptor.createDescriptor("VARCHAR24_ARRAY", conn);
-
 	    stmt = conn.prepareCall(db.stmtNewOrderStoredProcOracle);
 
-	    int[] ol_supply_w_id = new int[15];
-	    int[] ol_i_id = new int[15];
-	    int[] ol_quantity = new int [15];
+	    Integer[] ol_supply_w_id = new Integer[15];
+	    Integer[] ol_i_id = new Integer[15];
+	    Integer[] ol_quantity = new Integer[15];
 
 	    for (int i=0; i < 15; i++)
 	    {
@@ -876,22 +865,17 @@ public class jTPCCTData
 		ol_quantity[i] = newOrder.ol_quantity[i];
 	    }
 
-
-	    ARRAY ora_ol_supply_w_id = new ARRAY(oracleIntArray, conn, ol_supply_w_id);
-	    ARRAY ora_ol_i_id = new ARRAY(oracleIntArray, conn, ol_i_id);
-	    ARRAY ora_ol_quantity = new ARRAY(oracleIntArray, conn, ol_quantity);
-
 	    stmt.setInt(1, newOrder.w_id);
 	    stmt.setInt(2, newOrder.d_id);
 	    stmt.setInt(3, newOrder.c_id);
-	    stmt.setObject(4, ora_ol_supply_w_id);
-	    stmt.setObject(5, ora_ol_i_id);
-	    stmt.setObject(6, ora_ol_quantity);
-	    stmt.registerOutParameter(7, OracleTypes.ARRAY, "NUM_ARRAY");
-	    stmt.registerOutParameter(8, OracleTypes.ARRAY, "VARCHAR24_ARRAY");
-	    stmt.registerOutParameter(9, OracleTypes.ARRAY, "NUM_ARRAY");
-	    stmt.registerOutParameter(10, OracleTypes.ARRAY, "INT_ARRAY");
-	    stmt.registerOutParameter(11, OracleTypes.ARRAY, "CHAR_ARRAY");
+	    stmt.setObject(4, conn.createArrayOf("integer", ol_supply_w_id));
+	    stmt.setObject(5, conn.createArrayOf("integer", ol_i_id));
+	    stmt.setObject(6, conn.createArrayOf("integer", ol_quantity));
+	    stmt.registerOutParameter(7, JDBCType.ARRAY, "NUM_ARRAY");
+	    stmt.registerOutParameter(8, JDBCType.ARRAY, "VARCHAR_ARRAY");
+	    stmt.registerOutParameter(9, JDBCType.ARRAY, "NUM_ARRAY");
+	    stmt.registerOutParameter(10, JDBCType.ARRAY, "INT_ARRAY");
+	    stmt.registerOutParameter(11, JDBCType.ARRAY, "CHAR_ARRAY");
 	    stmt.registerOutParameter(12, Types.DECIMAL);
 	    stmt.registerOutParameter(13, Types.DECIMAL);
 	    stmt.registerOutParameter(14, Types.INTEGER);
@@ -904,13 +888,6 @@ public class jTPCCTData
 
 	    stmt.executeUpdate();
 
-	    // The stored proc succeeded. Extract the results.
-	    ARRAY ora_ol_amount = ((OracleCallableStatement)stmt).getARRAY(7);
-	    ARRAY ora_i_name = ((OracleCallableStatement)stmt).getARRAY(8);
-	    ARRAY ora_i_price = ((OracleCallableStatement)stmt).getARRAY(9);
-	    ARRAY ora_s_quantity = ((OracleCallableStatement)stmt).getARRAY(10);
-	    ARRAY ora_brand_generic = ((OracleCallableStatement)stmt).getARRAY(11);
-
 	    newOrder.w_tax = stmt.getDouble(12);
 	    newOrder.d_tax = stmt.getDouble(13);
 	    newOrder.o_id = stmt.getInt(14);
@@ -921,11 +898,11 @@ public class jTPCCTData
 	    newOrder.c_credit = stmt.getString(19);
 	    newOrder.c_discount = stmt.getDouble(20);
 
-	    double[] ol_amount_arr = ora_ol_amount.getDoubleArray();
-	    String[] i_name_arr = (String[]) ora_i_name.getArray();
-	    double[] i_price_arr = ora_i_price.getDoubleArray();
-	    int[] s_quantity_arr = ora_s_quantity.getIntArray();
-	    String[] brand_generic_arr = (String[]) ora_brand_generic.getArray();
+	    double[] ol_amount_arr = (double[])(stmt.getArray(7).getArray());
+	    String[] i_name_arr = (String[])(stmt.getArray(8).getArray());
+	    double[] i_price_arr = (double[])(stmt.getArray(9).getArray());
+	    int[] s_quantity_arr = (int[])(stmt.getArray(10).getArray());
+	    String[] brand_generic_arr = (String[])(stmt.getArray(11).getArray());
 
 	    for(int i = 0; i < 15; i++)
 	    { if( i < ol_amount_arr.length){
@@ -1932,19 +1909,6 @@ public class jTPCCTData
 	Connection		    conn = db.getConnection();
 	try {
 	    // Execute the stored procedure for ORDER_STATUS
-	    ArrayDescriptor oracleIntArray =
-		ArrayDescriptor.createDescriptor("INT_ARRAY", conn);
-	    ArrayDescriptor oracleDecimalArray =
-		ArrayDescriptor.createDescriptor("NUM_ARRAY", conn);
-	    ArrayDescriptor oracleTimestampArray =
-		ArrayDescriptor.createDescriptor("TIMESTAMP_ARRAY", conn);
-
-	    int[] supply_w_id_arr = new int[15];
-	    int[] i_id_arr = new int[15];
-	    int[] quantity_arr = new int[15];
-	    double[] amount_arr = new double[15];
-	    String[] delivery_d = new String[15];
-
 	    stmt = conn.prepareCall(db.stmtOrderStatusStoredProcOracle);
 	    stmt.setInt(1, orderStatus.w_id);
 	    stmt.setInt(2, orderStatus.d_id);
@@ -1958,11 +1922,11 @@ public class jTPCCTData
 	    stmt.registerOutParameter(8, Types.INTEGER);
 	    stmt.registerOutParameter(9, Types.TIMESTAMP);
 	    stmt.registerOutParameter(10, Types.INTEGER);
-	    stmt.registerOutParameter(11, OracleTypes.ARRAY, "INT_ARRAY");
-	    stmt.registerOutParameter(12, OracleTypes.ARRAY, "INT_ARRAY");
-	    stmt.registerOutParameter(13, OracleTypes.ARRAY, "INT_ARRAY");
-	    stmt.registerOutParameter(14, OracleTypes.ARRAY, "NUM_ARRAY");
-	    stmt.registerOutParameter(15, OracleTypes.ARRAY, "VARCHAR16_ARRAY");
+	    stmt.registerOutParameter(11, JDBCType.ARRAY, "INT_ARRAY");
+	    stmt.registerOutParameter(12, JDBCType.ARRAY, "INT_ARRAY");
+	    stmt.registerOutParameter(13, JDBCType.ARRAY, "INT_ARRAY");
+	    stmt.registerOutParameter(14, JDBCType.ARRAY, "NUM_ARRAY");
+	    stmt.registerOutParameter(15, JDBCType.ARRAY, "VARCHAR16_ARRAY");
 
 	    stmt.executeUpdate();
 
@@ -1976,17 +1940,11 @@ public class jTPCCTData
 	    orderStatus.o_entry_d = stmt.getTimestamp(9).toString();
 	    orderStatus.o_carrier_id = stmt.getInt(10);
 
-	    ARRAY ora_supply_w_id_arr = ((OracleCallableStatement)stmt).getARRAY(11);
-	    ARRAY ora_i_id_arr = ((OracleCallableStatement)stmt).getARRAY(12);
-	    ARRAY ora_quantity_arr = ((OracleCallableStatement)stmt).getARRAY(13);
-	    ARRAY ora_amount_arr = ((OracleCallableStatement)stmt).getARRAY(14);
-	    ARRAY ora_delivery_d_arr = ((OracleCallableStatement)stmt).getARRAY(15);
-
-	    supply_w_id_arr = ora_supply_w_id_arr.getIntArray();
-	    i_id_arr = ora_i_id_arr.getIntArray();
-	    quantity_arr = ora_quantity_arr.getIntArray();
-	    amount_arr = ora_amount_arr.getDoubleArray();
-	    delivery_d = (String[]) ora_delivery_d_arr.getArray();
+	    int[] supply_w_id_arr = (int[])(stmt.getArray(11).getArray());
+	    int[] i_id_arr = (int[])(stmt.getArray(12).getArray());
+	    int[] quantity_arr = (int[])(stmt.getArray(13).getArray());
+	    double[] amount_arr = (double[])(stmt.getArray(14).getArray());
+	    String[] delivery_d = (String[])(stmt.getArray(15).getArray());
 
 	    for (int i = 0; i < amount_arr.length; i++)
             {
@@ -2707,23 +2665,17 @@ public class jTPCCTData
 	Connection		    conn = db.getConnection();
 	try {
 	    // Execute the stored procedure for DELIVERY_BG
-	    ArrayDescriptor oracleIntArray =
-		ArrayDescriptor.createDescriptor("INT_ARRAY", conn);
-
-	    int[] delivery_array = new int[10];
-
-
 	    stmt = conn.prepareCall(db.stmtDeliveryBGStoredProcOracle);
 	    stmt.setInt(1, deliveryBG.w_id);
 	    stmt.setInt(2, deliveryBG.o_carrier_id);
 	    stmt.setTimestamp(3, Timestamp.valueOf(deliveryBG.ol_delivery_d));
-	    stmt.registerOutParameter(4, OracleTypes.ARRAY, "INT_ARRAY");
+	    stmt.registerOutParameter(4, JDBCType.ARRAY, "INT_ARRAY");
 
 	    stmt.executeUpdate();
 
 	    // The stored proc succeeded. Extract the results.
-	    ARRAY ora_array = ((OracleCallableStatement)stmt).getARRAY(4);
-	    delivery_array = ora_array.getIntArray();
+	    // Array ora_array = stmt.getArray(4);
+	    int[] delivery_array = (int[])(stmt.getArray(4).getArray());
 	    for(int i = 0; i < 10; i++)
 	    {
 		deliveryBG.delivered_o_id[i] = delivery_array[i];

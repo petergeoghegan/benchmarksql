@@ -1781,7 +1781,7 @@ public class jTPCCTData
 		ol_idx++;
 	    }
 
-	    db.rollback();
+	    db.commit();
 	}
 	catch (SQLException se)
 	{
@@ -2117,7 +2117,7 @@ public class jTPCCTData
 	    stockLevel.low_stock = rs.getInt("low_stock");
 	    rs.close();
 
-	    db.rollback();
+	    db.commit();
 	}
 	catch (SQLException se)
 	{

@@ -78,7 +78,7 @@ public class OSCollector
 	try
 	{
 	    ProcessBuilder pb = new ProcessBuilder(cmdLine);
-	    pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+	    pb.redirectErrorStream(true);
 
 	    collProc = pb.start();
 

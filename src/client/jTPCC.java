@@ -10,7 +10,6 @@
 import org.apache.log4j.*;
 
 import java.io.*;
-import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -211,16 +210,16 @@ public class jTPCC implements jTPCCConfig
 	    // Copy the used properties file into the resultDirectory.
 	    try
 	    {
-		Files.copy(new File(System.getProperty("prop")).toPath(), 
-			  new File(resultDir, "run.properties").toPath());
+		copyFile(new File(System.getProperty("prop")),
+			 new File(resultDir, "run.properties"));
 	    }
-	    catch (IOException e)
+	    catch (Exception e)
 	    {
 		log.error(e.getMessage());
 		System.exit(1);
 	    }
 	    log.info("Term-00, copied " + System.getProperty("prop") +
-	    	     " to " + new File(resultDir, "run.properties").toPath());
+		     " to " + new File(resultDir, "run.properties").getPath());
 
 	    // Create the runInfo.csv file.
 	    String runInfoCSVName = new File(resultDataDir, "runInfo.csv").getPath();
@@ -769,5 +768,23 @@ public class jTPCC implements jTPCCConfig
 	    for (int count = 0; count < informativeText.length(); count++)
 		System.out.print("\b");
 	}
+    }
+
+    private void copyFile(File in, File out)
+	throws FileNotFoundException, IOException
+    {
+	FileInputStream strIn = new FileInputStream(in);
+	FileOutputStream strOut = new FileOutputStream(out);
+	byte buf[] = new byte[65536];
+
+	int len = strIn.read(buf);
+	while (len > 0)
+	{
+	    strOut.write(buf);
+	    len = strIn.read(buf);
+	}
+
+	strOut.close();
+	strIn.close();
     }
 }

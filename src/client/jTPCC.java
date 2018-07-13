@@ -780,7 +780,7 @@ public class jTPCC implements jTPCCConfig
 	int len = strIn.read(buf);
 	while (len > 0)
 	{
-	    strOut.write(buf);
+	    strOut.write(buf, 0, len);
 	    len = strIn.read(buf);
 	}
 

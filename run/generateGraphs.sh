@@ -11,8 +11,9 @@ if [ $# -lt 1 ] ; then
     exit 2
 fi
 
-WIDTH=1200
-HEIGHT=400
+WIDTH=12
+HEIGHT=6
+POINTSIZE=12
 
 SIMPLE_GRAPHS="tpm_nopm latency cpu_utilization dirty_buffers"
 
@@ -20,8 +21,9 @@ for resdir in $* ; do
     cd "${resdir}" || exit 1
 
     for graph in $SIMPLE_GRAPHS ; do
-	echo -n "Generating ${resdir}/${graph}.png ... "
+	echo -n "Generating ${resdir}/${graph}.svg ... "
 	out=$(sed -e "s/@WIDTH@/${WIDTH}/g" -e "s/@HEIGHT@/${HEIGHT}/g" \
+		  -e "s/@POINTSIZE@/${POINTSIZE}/g" \
 		  <../misc/${graph}.R | R --no-save)
 	if [ $? -ne 0 ] ; then
 	    echo "ERROR"
@@ -37,8 +39,9 @@ for resdir in $* ; do
 	fi
 	devname=$(basename ${fname} .csv)
 
-	echo -n "Generating ${resdir}/${devname}_iops.png ... "
+	echo -n "Generating ${resdir}/${devname}_iops.svg ... "
 	out=$(sed -e "s/@WIDTH@/${WIDTH}/g" -e "s/@HEIGHT@/${HEIGHT}/g" \
+		  -e "s/@POINTSIZE@/${POINTSIZE}/g" \
 		  -e "s/@DEVICE@/${devname}/g" <../misc/blk_device_iops.R | R --no-save)
 	if [ $? -ne 0 ] ; then
 	    echo "ERROR"
@@ -47,8 +50,9 @@ for resdir in $* ; do
 	fi
 	echo "OK"
 
-	echo -n "Generating ${resdir}/${devname}_kbps.png ... "
+	echo -n "Generating ${resdir}/${devname}_kbps.svn ... "
 	out=$(sed -e "s/@WIDTH@/${WIDTH}/g" -e "s/@HEIGHT@/${HEIGHT}/g" \
+		  -e "s/@POINTSIZE@/${POINTSIZE}/g" \
 		  -e "s/@DEVICE@/${devname}/g" <../misc/blk_device_kbps.R | R --no-save)
 	if [ $? -ne 0 ] ; then
 	    echo "ERROR"
@@ -64,8 +68,9 @@ for resdir in $* ; do
 	fi
 	devname=$(basename ${fname} .csv)
 
-	echo -n "Generating ${resdir}/${devname}_iops.png ... "
+	echo -n "Generating ${resdir}/${devname}_iops.svn ... "
 	out=$(sed -e "s/@WIDTH@/${WIDTH}/g" -e "s/@HEIGHT@/${HEIGHT}/g" \
+		  -e "s/@POINTSIZE@/${POINTSIZE}/g" \
 		  -e "s/@DEVICE@/${devname}/g" <../misc/net_device_iops.R | R --no-save)
 	if [ $? -ne 0 ] ; then
 	    echo "ERROR"
@@ -74,8 +79,9 @@ for resdir in $* ; do
 	fi
 	echo "OK"
 
-	echo -n "Generating ${resdir}/${devname}_kbps.png ... "
+	echo -n "Generating ${resdir}/${devname}_kbps.svn ... "
 	out=$(sed -e "s/@WIDTH@/${WIDTH}/g" -e "s/@HEIGHT@/${HEIGHT}/g" \
+		  -e "s/@POINTSIZE@/${POINTSIZE}/g" \
 		  -e "s/@DEVICE@/${devname}/g" <../misc/net_device_kbps.R | R --no-save)
 	if [ $? -ne 0 ] ; then
 	    echo "ERROR"

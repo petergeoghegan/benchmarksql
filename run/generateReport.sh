@@ -223,9 +223,9 @@ cat >>report.html <<_EOF_
     of the DELIVERY transaction. 
 
     <br/>
-    <img src="tpm_nopm.png"/>
+    <img src="data:image/svg+xml;base64,$(base64 tpm_nopm.svg)" />
     <br/>
-    <img src="latency.png"/>
+    <img src="data:image/svg+xml;base64,$(base64 latency.svg)" />
   </p>
 _EOF_
 
@@ -244,7 +244,7 @@ cat >>report.html <<_EOF_
     on top of each other. 
 
     <br/>
-    <img src="cpu_utilization.png"/>
+    <img src="data:image/svg+xml;base64,$(base64 cpu_utilization.svg)" />
   </p>
 
   <h3>
@@ -262,7 +262,7 @@ cat >>report.html <<_EOF_
     real disks (or similar). 
 
     <br/>
-    <img src="dirty_buffers.png"/>
+    <img src="data:image/svg+xml;base64,$(base64 dirty_buffers.svg)" />
   </p>
 _EOF_
 
@@ -280,9 +280,9 @@ for devdata in data/blk_*.csv ; do
       Block Device ${dev}
     </h3>
     <p>
-      <img src="${dev}_iops.png"/>
+      <img src="data:image/svg+xml;base64,$(base64 ${dev}_iops.svg)" />
       <br/>
-      <img src="${dev}_kbps.png"/>
+      <img src="data:image/svg+xml;base64,$(base64 ${dev}_kbps.svg)" />
     </p>
 _EOF_
 done
@@ -301,9 +301,9 @@ for devdata in data/net_*.csv ; do
       Network Device ${dev}
     </h3>
     <p>
-      <img src="${dev}_iops.png"/>
+      <img src="data:image/svg+xml;base64,$(base64 ${dev}_iops.svg)" />
       <br/>
-      <img src="${dev}_kbps.png"/>
+      <img src="data:image/svg+xml;base64,$(base64 ${dev}_kbps.svg)" />
     </p>
 _EOF_
 done
@@ -316,5 +316,12 @@ cat >>report.html <<_EOF_
 </html>
 
 _EOF_
+
+# ----
+# Copy the report to the name of the result directory as .html
+# We do the dirname-trick to strip any trailing / that might
+# have resulted from tab-completion.
+# ----
+cp report.html ../$(dirname ${1}/.dummy).html
 
 echo "OK"

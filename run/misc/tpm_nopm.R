@@ -55,7 +55,7 @@ if (ymax < (ymax_count * 1.2)) {
 # ----
 # Start the output image.
 # ----
-png("tpm_nopm.png", width=@WIDTH@, height=@HEIGHT@)
+svg("tpm_nopm.svg", width=@WIDTH@, height=@HEIGHT@, pointsize=@POINTSIZE@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----

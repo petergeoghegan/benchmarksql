@@ -42,7 +42,7 @@ ymax = 100
 # ----
 # Start the output image.
 # ----
-png("cpu_utilization.png", width=@WIDTH@, height=@HEIGHT@)
+svg("cpu_utilization.svg", width=@WIDTH@, height=@HEIGHT@, pointsize=@POINTSIZE@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----

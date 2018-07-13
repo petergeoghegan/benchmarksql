@@ -55,7 +55,7 @@ if (ymax < (ymax_rd * 1.2) || ymax < (ymax_wr * 1.2)) {
 # ----
 # Start the output image.
 # ----
-png("@DEVICE@_iops.png", width=@WIDTH@, height=@HEIGHT@)
+svg("@DEVICE@_iops.svg", width=@WIDTH@, height=@HEIGHT@, pointsize=@POINTSIZE@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----

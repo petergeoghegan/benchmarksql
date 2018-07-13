@@ -52,7 +52,7 @@ if (ymax < (ymax_rx * 1.2) || ymax < (ymax_tx * 1.2)) {
 # ----
 # Start the output image.
 # ----
-png("@DEVICE@_kbps.png", width=@WIDTH@, height=@HEIGHT@)
+svg("@DEVICE@_kbps.svg", width=@WIDTH@, height=@HEIGHT@, pointsize=@POINTSIZE@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----

@@ -67,7 +67,7 @@ if (ymax < (ymax_total * 1.2)) {
 # ----
 # Start the output image.
 # ----
-png("latency.png", width=@WIDTH@, height=@HEIGHT@)
+svg("latency.svg", width=@WIDTH@, height=@HEIGHT@, pointsize=@POINTSIZE@)
 par(mar=c(4,4,4,4), xaxp=c(10,200,19))
 
 # ----

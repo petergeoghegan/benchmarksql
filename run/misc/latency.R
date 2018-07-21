@@ -11,6 +11,7 @@ runInfo <- read.csv("data/runInfo.csv", head=TRUE)
 # Determine the grouping interval in seconds based on the
 # run duration.
 # ----
+xmin <- @SKIP@
 xmax <- runInfo$runMins
 for (interval in c(1, 2, 5, 10, 20, 60, 120, 300, 600)) {
     if ((xmax * 60) / interval <= 1000) {
@@ -18,12 +19,14 @@ for (interval in c(1, 2, 5, 10, 20, 60, 120, 300, 600)) {
     }
 }
 idiv <- interval * 1000.0
+skip <- xmin * 60000
 
 # ----
 # Read the result.csv and then filter the raw data
 # by transaction type
 # ----
 rawData <- read.csv("data/result.csv", head=TRUE)
+rawData <- rawData[rawData$elapsed >= skip, ]
 noBGData <- rawData[rawData$ttype != 'DELIVERY_BG', ]
 newOrder <- rawData[rawData$ttype == 'NEW_ORDER', ]
 payment <- rawData[rawData$ttype == 'PAYMENT', ]
@@ -79,7 +82,7 @@ plot (
 	axes=TRUE,
 	xlab="Elapsed Minutes",
 	ylab="Latency in Milliseconds",
-	xlim=c(0, xmax),
+	xlim=c(xmin, xmax),
 	ylim=c(0, ymax)
 )
 
@@ -93,7 +96,7 @@ plot (
 	axes=FALSE,
 	xlab="",
 	ylab="",
-	xlim=c(0, xmax),
+	xlim=c(xmin, xmax),
 	ylim=c(0, ymax)
 )
 
@@ -107,7 +110,7 @@ plot (
 	axes=FALSE,
 	xlab="",
 	ylab="",
-	xlim=c(0, xmax),
+	xlim=c(xmin, xmax),
 	ylim=c(0, ymax)
 )
 
@@ -121,7 +124,7 @@ plot (
 	axes=FALSE,
 	xlab="",
 	ylab="",
-	xlim=c(0, xmax),
+	xlim=c(xmin, xmax),
 	ylim=c(0, ymax)
 )
 
@@ -135,7 +138,7 @@ plot (
 	axes=FALSE,
 	xlab="",
 	ylab="",
-	xlim=c(0, xmax),
+	xlim=c(xmin, xmax),
 	ylim=c(0, ymax)
 )
 
@@ -194,6 +197,14 @@ tx_90th <- c(
 	sprintf("%.3fs", quantile(delivery$latency, probs=0.90) / 1000.0),
 	sprintf("%.3fs", quantile(deliveryBG$latency, probs=0.90) / 1000.0),
 	NA, NA)
+tx_avg <- c(
+	sprintf("%.3fs", mean(newOrder$latency) / 1000.0),
+	sprintf("%.3fs", mean(payment$latency) / 1000.0),
+	sprintf("%.3fs", mean(orderStatus$latency) / 1000.0),
+	sprintf("%.3fs", mean(stockLevel$latency) / 1000.0),
+	sprintf("%.3fs", mean(delivery$latency) / 1000.0),
+	sprintf("%.3fs", mean(deliveryBG$latency) / 1000.0),
+	NA, NA)
 tx_max <- c(
 	sprintf("%.3fs", max(newOrder$latency) / 1000.0),
 	sprintf("%.3fs", max(payment$latency) / 1000.0),
@@ -223,6 +234,7 @@ tx_info <- data.frame(
 	tx_count,
 	tx_percent,
 	tx_90th,
+	tx_avg,
 	tx_max,
 	tx_limit,
 	tx_rbk,

@@ -1,11 +1,16 @@
 #!/bin/sh
 
-if [ $# -ne 1 ] ; then
-    echo "usage: $(basename $0) RESULT_DIR" >&2
+if [ $# -lt 1 ] ; then
+    echo "usage: $(basename $0) RESULT_DIR [SKIP_MINUTES]" >&2
     exit 2
 fi
 
 TABLE_WIDTH="1100px"
+if [ $# -gt 1 ] ; then
+	SKIP=$2
+else
+	SKIP=0
+fi
 
 function getRunInfo()
 {
@@ -33,7 +38,7 @@ function getProp()
     grep "^${1}=" run.properties | sed -e "s/^${1}=//"
 }
 
-./generateGraphs.sh "${1}"
+./generateGraphs.sh "${1}" $SKIP
 cd "${1}"
 echo -n "Generating ${1}/report.html ... "
 
@@ -145,7 +150,7 @@ cat >> report.html <<_EOF_
     <table width="${TABLE_WIDTH}" border="2">
     <tr>
       <th rowspan="2" width="16%"><b>Transaction<br/>Type</b></th>
-      <th colspan="2" width="24%"><b>Latency</b></th>
+      <th colspan="3" width="24%"><b>Latency</b></th>
       <th rowspan="2" width="12%"><b>Count</b></th>
       <th rowspan="2" width="12%"><b>Percent</b></th>
       <th rowspan="2" width="12%"><b>Rollback</b></th>
@@ -153,13 +158,14 @@ cat >> report.html <<_EOF_
       <th rowspan="2" width="12%"><b>Skipped<br/>Deliveries</b></th>
     </tr>
     <tr>
-      <th width="12%"><b>90th&nbsp;%</b></th>
-      <th width="12%"><b>Maximum</b></th>
+      <th width="8%"><b>90th&nbsp;%</b></th>
+      <th width="8%"><b>Avg</b></th>
+      <th width="8%"><b>Max</b></th>
     </tr>
 _EOF_
 
 tr ',' ' ' <data/tx_summary.csv | \
-    while read name count percent ninth max limit rbk error dskipped ; do
+    while read name count percent ninth avg max limit rbk error dskipped ; do
 	[ ${name} == "tx_name" ] && continue
 	[ ${name} == "tpmC" ] && continue
 	[ ${name} == "tpmTotal" ] && continue
@@ -167,6 +173,7 @@ tr ',' ' ' <data/tx_summary.csv | \
 	echo "    <tr>"
 	echo "      <td align=\"left\">${name}</td>"
 	echo "      <td align=\"right\">${ninth}</td>"
+	echo "      <td align=\"right\">${avg}</td>"
 	echo "      <td align=\"right\">${max}</td>"
 	echo "      <td align=\"right\">${count}</td>"
 	echo "      <td align=\"right\">${percent}</td>"

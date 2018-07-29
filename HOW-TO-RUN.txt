@@ -4,7 +4,7 @@ Instructions for running BenchmarkSQL on PostgreSQL
 
 0. Requirements
 
-    Use of JDK7 is required.
+    Use of JDK8 is required.
 
 1. Create the benchmarksql user and a database
 

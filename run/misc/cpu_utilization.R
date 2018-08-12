@@ -101,3 +101,37 @@ title (main=c(
     ))
 grid()
 box()
+
+# ----
+# Generate the CPU utilization summary and write it to data/cpu_summary.csv
+# ----
+cpu_category <- c(
+	'cpu_user',
+	'cpu_system',
+	'cpu_iowait',
+	'cpu_idle',
+	'cpu_nice',
+	'cpu_irq',
+	'cpu_softirq',
+	'cpu_steal',
+	'cpu_guest',
+	'cpu_guest_nice'
+	)
+cpu_usage <- c(
+	sprintf("%.3f%%", mean(rawData$cpu_user) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_system) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_iowait) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_idle) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_nice) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_irq) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_softirq) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_steal) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_guest) * 100.0),
+	sprintf("%.3f%%", mean(rawData$cpu_guest_nice) * 100.0)
+	)
+cpu_info <- data.frame(
+	cpu_category,
+	cpu_usage
+	)
+write.csv(cpu_info, file = "data/cpu_summary.csv", quote = FALSE, na = "N/A",
+	row.names = FALSE)

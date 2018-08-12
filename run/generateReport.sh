@@ -247,7 +247,28 @@ cat >>report.html <<_EOF_
     CPU Utilization
   </h3>
   <p>
-    The percentages for User, System and IOWait CPU time are stacked
+    <table border="2">
+    <tr>
+      <th colspan="2"><b>Overall Average CPU Utilization</b></th>
+    </tr>
+_EOF_
+
+tr ',' ' ' <data/cpu_summary.csv | \
+    while read category value ; do
+	[ $category == "cpu_category" ] && continue
+	echo "    <tr>"
+	echo "      <td align=\"left\">${category}</td>"
+	echo "      <td align=\"right\">${value}</td>"
+	echo "    </tr>"
+    done >>report.html
+
+cat >>report.html <<_EOF_
+    </table>
+  </p>
+  <br/>
+  <br/>
+  <p>
+    <b>Note:</b>In the graph below the percentages for User, System and IOWait CPU time are stacked
     on top of each other. 
 
     <br/>

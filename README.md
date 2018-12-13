@@ -8,6 +8,15 @@ BenchmarkSQL is Open Source, distributed under the GNU General Public License ve
 CHANGE LOG:
 -----------
 
+Version 5.1 lussman & jannicash:
+--------------------------------
+  +  Clarify License
+  +  Remove deprecated Oracle proprietary features (allows to build without the ORA JDBC driver)
+  +  Change result graphs to inlined SVGs
+  +  Add an option to skip rampup time in the report
+  +  Add CPU utilization summary to report
+  +  Numerous bug fixes
+
 Version 5.0 lussman & jannicash:
 --------------------------------------
   +  Upgrade to PostgreSQL 9.3 JDBC 4.1 version 1102 driver

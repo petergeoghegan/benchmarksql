@@ -39,7 +39,7 @@ Instructions for running BenchmarkSQL on PostgreSQL
 
     dist:
 	[mkdir] Created dir: /home/wieck/benchmarksql/dist
-	  [jar] Building jar: /home/wieck/benchmarksql/dist/BenchmarkSQL-5.1.jar
+	  [jar] Building jar: /home/wieck/benchmarksql/dist/BenchmarkSQL-6.devel.jar
     BUILD SUCCESSFUL
     Total time: 1 second
     [wieck@localhost benchmarksql] $

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if [ $# -lt 1 ] ; then
     echo "usage: $(basename $0) PROPS [OPT VAL [...]]" >&2

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 if [ $# -ne 1 ] ; then
     echo "usage: $(basename $0) PROPS" >&2

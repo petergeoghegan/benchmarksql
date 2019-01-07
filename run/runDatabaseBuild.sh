@@ -14,9 +14,9 @@ fi
 
 DB="$(grep '^db=' $PROPS | sed -e 's/^db=//')"
 
-BEFORE_LOAD="tableCreates extraCommandsBeforeLoad storedProcedureCreates"
+BEFORE_LOAD="tableCreates extraCommandsBeforeLoad storedProcedureCreates indexCreates"
 
-AFTER_LOAD="indexCreates foreignKeys extraHistID buildFinish"
+AFTER_LOAD="foreignKeys extraHistID buildFinish"
 
 for step in ${BEFORE_LOAD} ; do
     ./runSQL.sh "${PROPS}" $step

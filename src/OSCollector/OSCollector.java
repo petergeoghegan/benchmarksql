@@ -48,7 +48,7 @@ public class OSCollector
 	    // cmdLine.add("-t");
 	    cmdLine.add(sshAddress);
 	}
-	cmdLine.add("python");
+	cmdLine.add("python2");
 	cmdLine.add("-");
 	cmdLine.add(Integer.toString(runID));
 	cmdLine.add(Integer.toString(interval));

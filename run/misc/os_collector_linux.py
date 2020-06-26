@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # ----------------------------------------------------------------------
 # os_collector_linux.py -
 #
@@ -173,7 +173,7 @@ def initSystemUsage():
             lastVMStatData['vm_' + line[0]] = int(line[1])
     if len(lastVMStatData.keys()) != 1:
         raise Exception("not all elements found in /proc/vmstat")
-        
+
     return [
             'cpu_user', 'cpu_nice', 'cpu_system',
             'cpu_idle', 'cpu_iowait', 'cpu_irq',
@@ -211,7 +211,7 @@ def getSystemUsage():
         line = line.split()
         if line[0] in ['nr_dirty', ]:
             newVMStatData['vm_' + line[0]] = int(line[1])
-    
+
     for key in ['vm_nr_dirty', ]:
         result.append(newVMStatData[key])
 

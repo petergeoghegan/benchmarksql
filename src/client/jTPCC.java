@@ -33,7 +33,7 @@ public class jTPCC implements jTPCCConfig
     private long terminalsStarted = 0, sessionCount = 0, transactionCount = 0;
     private Object counterLock = new Object();
 
-    private long newOrderCounter = 0, sessionStartTimestamp, sessionEndTimestamp, sessionNextTimestamp=Long.MAX_VALUE, sessionNextKounter=0;
+    private long newOrderCounter = 0, sessionProgressCount = 0, sessionStartTimestamp, sessionEndTimestamp, sessionNextTimestamp=Long.MAX_VALUE, sessionNextKounter=0;
     private long sessionEndTargetTime = -1, fastNewOrderCounter, recentTpmC=0, recentTpmTotal=0;
     private boolean signalTerminalsRequestEndSent = false, databaseDriverLoaded = false;
 
@@ -751,6 +751,7 @@ public class jTPCC implements jTPCCConfig
 	    double tpmTotal = (6000000*transactionCount/(currTimeMillis - sessionStartTimestamp))/100.0;
 
 	    sessionNextTimestamp += 1000;  /* update this every seconds */
+	    sessionProgressCount++;
 
 	    fmt.format("progress: %.1f, tpmTOTAL: %.1f, tpmC: %.1f",
 		       (double) (currTimeMillis - sessionStartTimestamp)/1000, tpmTotal, tpmC);
@@ -767,7 +768,15 @@ public class jTPCC implements jTPCCConfig
 	    // XXX: This doesn't seem worth including
 	    //fmt.format("    Memory Usage: %dMB / %dMB          ", (totalMem - freeMem), totalMem);
 
+	    // Dump out timestamp every 60 seconds to make it easy to work with Postgres logs:
+	    if (sessionProgressCount % 60 == 0)
+	    {
+		  Calendar calendar = Calendar.getInstance();
+		  calendar.setTimeInMillis(currTimeMillis);
+		  System.out.println(calendar.getTime());
+	    }
 	    System.out.println(informativeText);
+
 	}
     }
 

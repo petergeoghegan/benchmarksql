@@ -65,6 +65,12 @@ if (ymax < (ymax_total * 1.2)) {
     ymax <- ymax * 1.2
 }
 
+if (ymax < 100) {
+    ymax <- 120
+}
+
+#stop(ymax)
+
 
 
 # ----

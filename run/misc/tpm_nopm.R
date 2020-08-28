@@ -53,6 +53,11 @@ if (ymax < (ymax_count * 1.2)) {
     ymax <- ymax * 1.2
 }
 
+ymaxmod <- ymax %% 25000
+ymaxsub <- 25000 - ymaxmod
+ymax <- ymax + ymaxsub
+
+#stop(ymax)
 
 
 # ----
